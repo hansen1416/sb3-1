@@ -1,11 +1,12 @@
 <script>
 	import { onDestroy, onMount } from "svelte";
-	// import * as THREE from "three";
+	import { Quaternion, Vector3 } from "three";
 	// @ts-ignore
 	// import { cloneDeep } from "lodash";
 
 	import ThreeScene from "../lib/ThreeScene";
 	import RapierWorld from "../lib/RapierWorld";
+	import SceneManager from "../lib/SceneManager";
 
 	/**
 	 * what do I need?
@@ -49,6 +50,8 @@
 	let threeScene;
 	/** @type {RapierWorld} */
 	let physicsWorld;
+	/** @type {SceneManager} */
+	let sceneManager;
 
 	let canvas;
 
@@ -65,6 +68,59 @@
 
 		Promise.all([import("@dimforge/rapier3d")]).then(([RAPIER]) => {
 			physicsWorld = new RapierWorld(RAPIER);
+
+			sceneManager = new SceneManager(threeScene, physicsWorld);
+
+			const size = 10;
+
+			sceneManager.addBoard(
+				size,
+				new Vector3(size / 2, 0, 0),
+				new Quaternion().setFromAxisAngle(
+					new Vector3(0, 0, 1),
+					Math.PI / 2
+				),
+				0x0000ff
+			);
+
+			sceneManager.addBoard(
+				size,
+				new Vector3(0, 0, -size / 2),
+				new Quaternion().setFromAxisAngle(
+					new Vector3(1, 0, 0),
+					Math.PI / 2
+				),
+				0x0000ff
+			);
+
+			sceneManager.addBoard(
+				size,
+				new Vector3(size / -2, 0, 0),
+				new Quaternion().setFromAxisAngle(
+					new Vector3(0, 0, 1),
+					-Math.PI / 2
+				),
+				0x0000ff
+			);
+
+			sceneManager.addBoard(
+				size,
+				new Vector3(0, size / 2, 0),
+				new Quaternion(),
+				0x0000ff
+			);
+
+			sceneManager.addBoard(
+				size,
+				new Vector3(0, size / -2, 0),
+				new Quaternion().setFromAxisAngle(
+					new Vector3(0, 0, 1),
+					Math.PI
+				),
+				0x0000ff
+			);
+
+			sceneManager.addBall();
 
 			assetReady = true;
 		});
@@ -86,6 +142,8 @@
 		// update physics world and threejs renderer
 		physicsWorld.onFrameUpdate();
 		threeScene.onFrameUpdate();
+
+		sceneManager.onFrameUpdate();
 
 		animationPointer = requestAnimationFrame(animate);
 	}

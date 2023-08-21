@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { Vector3 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 
@@ -13,8 +14,8 @@ if (import.meta.env.DEV) {
 }
 
 export const SceneProperties = {
-	camera_height: 1.4,
-	camera_far_z: 6,
+	camera_height: 4,
+	camera_far_z: 20,
 };
 
 Object.freeze(SceneProperties);
@@ -63,7 +64,7 @@ export default class ThreeScene {
 		this.camera.position.set(
 			0,
 			SceneProperties.camera_height,
-			-SceneProperties.camera_far_z
+			SceneProperties.camera_far_z
 		);
 
 		this.camera.updateProjectionMatrix(); // update the camera's projection matrix
@@ -118,13 +119,56 @@ export default class ThreeScene {
 		}
 	}
 
+	resetControl() {
+		this.controls.reset();
+	}
+
+	/**
+	 * create a plane buffer geometry
+	 *
+	 * @param {Float32Array} vertices
+	 * @param {number[]} indices
+	 * @param {Vector3} position
+	 * @param {THREE.Quaternion} rotation
+	 * @param {number} color
+	 * @returns
+	 */
+	createBoard(
+		vertices,
+		indices,
+		position = new Vector3(0, 0, 0),
+		rotation = new THREE.Quaternion(),
+		color = 0xff0000
+	) {
+		const geometry = new THREE.BufferGeometry();
+
+		geometry.setIndex(indices);
+		geometry.setAttribute(
+			"position",
+			new THREE.BufferAttribute(vertices, 3)
+		);
+
+		const material = new THREE.MeshBasicMaterial({
+			color: color,
+			side: THREE.DoubleSide,
+		});
+		const mesh = new THREE.Mesh(geometry, material);
+
+		mesh.position.set(position.x, position.y, position.z);
+		mesh.rotation.setFromQuaternion(rotation);
+
+		this.scene.add(mesh);
+
+		return mesh;
+	}
+
 	/**
 	 *
 	 * @returns {THREE.Mesh}
 	 */
-	createProjectile() {
+	createBall() {
 		const mesh = new THREE.Mesh(
-			new THREE.SphereGeometry(0.1), // @ts-ignore
+			new THREE.SphereGeometry(1), // @ts-ignore
 			new THREE.MeshNormalMaterial()
 		);
 		mesh.castShadow = true;
@@ -133,64 +177,4 @@ export default class ThreeScene {
 
 		return mesh;
 	}
-
-	/**
-	 *
-	 * @param {import("./RapierWorld").vec3} pos
-	 */
-	createRandomSample(pos) {
-		const mesh = new THREE.Mesh(
-			new THREE.BoxGeometry(0.8, 1.6, 0.6),
-			new THREE.MeshBasicMaterial({ color: 0xff0099 })
-		);
-
-		mesh.position.set(pos.x, pos.y, pos.z);
-
-		mesh.castShadow = true;
-
-		this.scene.add(mesh);
-
-		return mesh;
-	}
-
-	/**
-	 *
-	 * @param {THREE.Mesh} player_obj
-	 */
-	removePlayerObj(player_obj) {
-		console.info("todo remove", player_obj);
-	}
-
-	resetControl() {
-		this.controls.reset();
-	}
-
-	/**
-	unload(target:THREE.Object3D){
-        target.removeFromParent();
-        target.traverse((child:any) => {
-            // disposing materials
-            if (child.material && !child.material._isDisposed){
-                // disposing textures
-                for (const value of Object.values(child.material) as any[]){
-                    if (!value) continue;
-                    if (value.dispose && !value._isDisposed){
-                        value.dispose();
-                        value._isDisposed = true;
-                    }
-                }
-                child.material.dispose();
-                child.material._isDisposed = true;
-            }
-            // disposing geometries
-            if (child.geometry?.dispose && !child.geometry._isDisposed){
-                child.geometry.dispose();
-                child.geometry._isDisposed = true;
-            }
-        });
-    }
-
-	missing child.skeleton.boneTexture.dispose(); and you all set :+1:
-but if you never use skinned mesh, you can skip this.
- */
 }
