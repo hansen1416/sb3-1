@@ -19,13 +19,13 @@ export default class RapierWorld {
 	/**
 	 *  Larger values of the damping coefficients lead to a stronger slow-downs. Their default values are 0.0 (no damping at all).
 	 */
-	liner_damping = 0.5;
+	liner_damping = 0;
 
 	/**
 	 * A friction coefficient of 0 implies no friction at all (completely sliding contact)
 	 * and a coefficient greater or equal to 1 implies a very strong friction. Values greater than 1 are allowed.
 	 */
-	friction = 0.5;
+	friction = 0;
 
 	/**
 	 * A restitution coefficient set to 1 (fully elastic contact) implies that
@@ -37,7 +37,7 @@ export default class RapierWorld {
 	 * it's as if you drop a ball but it doesn't bounce at all.
 	 */
 
-	restitution = 0.3;
+	restitution = 1;
 
 	/**
 	 * @type {RigidBody}
@@ -109,16 +109,25 @@ export default class RapierWorld {
 		return rigid;
 	}
 
-	createBall() {
+	/**
+	 * 
+	 * @param {number} size 
+	 * @returns 
+	 */
+	createBall(size) {
+
+		const velocity = {x: 10, y: 0, z: 0};
+
 		// @ts-ignore
 		const rbDesc = this.RigidBodyDesc.dynamic()
 			.setLinearDamping(this.liner_damping)
+			.setLinvel(velocity.x, velocity.y, velocity.z)
 			// .restrictRotations(false, true, false) // Y-axis only
 			.setCcdEnabled(true);
 		const rigid = this.world.createRigidBody(rbDesc);
 
 		// @ts-ignore
-		const clDesc = this.ColliderDesc.ball(1)
+		const clDesc = this.ColliderDesc.ball(size)
 			.setFriction(this.friction) // @ts-ignore
 			.setFrictionCombineRule(this.CoefficientCombineRule.Max)
 			// .setTranslation(0, 0, 0)

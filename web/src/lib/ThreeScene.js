@@ -15,7 +15,7 @@ if (import.meta.env.DEV) {
 
 export const SceneProperties = {
 	camera_height: 4,
-	camera_far_z: 20,
+	camera_far_z: 16,
 };
 
 Object.freeze(SceneProperties);
@@ -163,12 +163,12 @@ export default class ThreeScene {
 	}
 
 	/**
-	 *
+	 * @param {number} size
 	 * @returns {THREE.Mesh}
 	 */
-	createBall() {
+	createBall(size) {
 		const mesh = new THREE.Mesh(
-			new THREE.SphereGeometry(1), // @ts-ignore
+			new THREE.SphereGeometry(size), // @ts-ignore
 			new THREE.MeshNormalMaterial()
 		);
 		mesh.castShadow = true;

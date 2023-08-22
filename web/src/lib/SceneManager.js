@@ -120,8 +120,10 @@ export default class SceneManager {
 	}
 
 	addBall() {
-		const mesh = this.renderer.createBall();
-		const rigid = this.physics.createBall();
+		const size = 0.1
+
+		const mesh = this.renderer.createBall(size);
+		const rigid = this.physics.createBall(size);
 
 		this.item_rigid.push(rigid);
 		this.item_meshes.push(mesh);
