@@ -58,6 +58,8 @@
 	let assetReady = false,
 		animationPointer;
 
+	let ballMesh;
+
 	const sceneWidth = document.documentElement.clientWidth;
 	const sceneHeight = document.documentElement.clientHeight;
 
@@ -120,7 +122,7 @@
 				0x0000ff
 			);
 
-			sceneManager.addBall();
+			ballMesh = sceneManager.addBall();
 
 			assetReady = true;
 		});
@@ -144,6 +146,11 @@
 		threeScene.onFrameUpdate();
 
 		sceneManager.onFrameUpdate();
+
+		if (ballMesh.position.z > 5) {
+			// todo, ball is out of box, clear its mesh and rigid body
+			threeScene.clearBallMesh(ballMesh);
+		}
 
 		animationPointer = requestAnimationFrame(animate);
 	}
