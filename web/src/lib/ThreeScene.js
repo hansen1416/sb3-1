@@ -14,7 +14,7 @@ if (import.meta.env.DEV) {
 }
 
 export const SceneProperties = {
-	camera_height: 4,
+	camera_height: 2,
 	camera_far_z: 16,
 };
 
@@ -42,23 +42,11 @@ export default class ThreeScene {
 
 		this.scene.add(new THREE.AxesHelper(5));
 
-		// this.camera = new THREE.OrthographicCamera(
-		// 	width / -2, // left
-		// 	width / 2, // right
-		// 	height / 2, // top
-		// 	height / -2, // bottom
-		// 	0.1, // near
-		// 	width * 2 // far
-		// );
-
-		// this.camera.zoom = 60; // zoom in by 50%
-		// this.camera.position.set(0, 0.1, -4);
-
 		this.camera = new THREE.PerspectiveCamera(
 			75,
 			width / height,
 			0.01,
-			4000
+			2000
 		);
 
 		this.camera.position.set(
@@ -70,7 +58,7 @@ export default class ThreeScene {
 		this.camera.updateProjectionMatrix(); // update the camera's projection matrix
 
 		// env light
-		this.scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+		this.scene.add(new THREE.AmbientLight(0xffffff, 1));
 
 		/**
 		// mimic the sun light. maybe update light position later
@@ -80,15 +68,18 @@ export default class ThreeScene {
 		// this.light.shadow.mapSize.width = 2048;
 		// this.light.shadow.mapSize.height = 2048;
  */
-		this.light = new THREE.DirectionalLight(0xffffff, 0.9);
-		this.light.position.set(0, 1000, 0);
+		this.light = new THREE.PointLight(0xffffff, 1);
+		this.light.position.set(0, 0, 0);
 		this.light.castShadow = true;
+		// this.scene.add(this.light);
 
-		this.light.target = new THREE.Object3D();
-		this.light.target.position.set(0, 0, 1000);
+		// this.light.target = new THREE.Object3D();
+		// this.light.target.position.set(0, -10, 0);
+		// this.scene.add(this.light.target);
 
-		this.scene.add(this.light);
-		this.scene.add(this.light.target);
+		// Create a directional light helper
+		// const lightHelper = new THREE.PointLightHelper(this.light, 10);
+		// this.scene.add(lightHelper);
 
 		// env fog
 		// this.scene.fog = new THREE.Fog(0x000000, 50, 200);
@@ -101,8 +92,8 @@ export default class ThreeScene {
 
 		this.renderer.shadowMap.enabled = true;
 		// this.renderer.shadowMap.type = THREE.BasicShadowMap;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-		this.renderer.toneMappingExposure = 0.5;
+		// this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		// this.renderer.toneMappingExposure = 0.5;
 
 		this.controls = new OrbitControls(this.camera, canvas);
 
@@ -110,7 +101,7 @@ export default class ThreeScene {
 	}
 
 	onFrameUpdate() {
-		// this.controls.update();
+		this.controls.update();
 
 		this.renderer.render(this.scene, this.camera);
 
@@ -156,6 +147,9 @@ export default class ThreeScene {
 
 		mesh.position.set(position.x, position.y, position.z);
 		mesh.rotation.setFromQuaternion(rotation);
+
+		mesh.receiveShadow = true;
+		mesh.castShadow = true;
 
 		this.scene.add(mesh);
 

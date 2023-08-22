@@ -11,7 +11,7 @@
  * @typedef {{x: number, y: number, z: number}} vec3
  */
 
-import * as THREE from "three";
+import { randomVecWithinAngelDistance } from "../utils/ropes";
 
 let instance;
 
@@ -110,13 +110,13 @@ export default class RapierWorld {
 	}
 
 	/**
-	 * 
-	 * @param {number} size 
-	 * @returns 
+	 *
+	 * @param {number} size
+	 * @returns
 	 */
 	createBall(size) {
-
-		const velocity = {x: 10, y: 0, z: 0};
+		const speed = 10;
+		const velocity = randomVecWithinAngelDistance().multiplyScalar(speed);
 
 		// @ts-ignore
 		const rbDesc = this.RigidBodyDesc.dynamic()

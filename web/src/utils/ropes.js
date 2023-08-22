@@ -1503,8 +1503,8 @@ export function readBuffer(buffer) {
 /**
  * looping in a spiral, generate a array of points, that is grow in a spiral manner
  * https://www.baeldung.com/cs/looping-spiral
- * 
- * @param {number} radius 
+ *
+ * @param {number} radius
  * @returns {Array}
  */
 export function spiralArray(radius) {
@@ -1514,7 +1514,7 @@ export function spiralArray(radius) {
 	let dx = 0;
 	let dy = -1;
 
-	const arr = []
+	const arr = [];
 
 	for (let i = 0; i < radius ** 2; i++) {
 		if (
@@ -1523,7 +1523,7 @@ export function spiralArray(radius) {
 			-radius / 2 < y &&
 			y <= radius / 2
 		) {
-			arr.push([x, y])
+			arr.push([x, y]);
 		}
 
 		if (x === y || (x < 0 && x === -y) || (x > 0 && x === 1 - y)) {
@@ -1533,18 +1533,54 @@ export function spiralArray(radius) {
 		[x, y] = [x + dx, y + dy];
 	}
 
-	return arr
+	return arr;
 }
 
 /**
- * 
- * @param {number} num 
- * @returns 
+ *
+ * @param {number} num
+ * @returns
  */
 export function pad0(num) {
 	return ("00000000" + num).slice(-8);
 }
 
+/**
+ * generate a random vector within a certain angle distance from a target vector
+ *
+ * @returns {THREE.Vector3}
+ */
+export function randomVecWithinAngelDistance() {
+	const targetVector = new THREE.Vector3(0, 0, -1);
+	// within 60 degs from target vector
+	const angle = 60;
+	const angleInRadians = (angle * Math.PI) / 180;
+
+	const randomRadian = Math.random() * angleInRadians;
+
+	// only generate random vector in half of the 3d space, where z is negative
+	const randomVector = new THREE.Vector3(
+		Math.random() * 2 - 1, // x component between -1 and 1
+		Math.random() * 2 - 1, // y component between -1 and 1
+		Math.random() * -1 // z component between -1 and 1
+	).normalize();
+
+	// find the rotation axis
+	const rotationAxis = new THREE.Vector3().crossVectors(
+		randomVector,
+		new THREE.Vector3(0, 0, -1)
+	);
+
+	// find the rotation angle
+	const quaternion = new THREE.Quaternion().setFromAxisAngle(
+		rotationAxis,
+		randomRadian
+	);
+
+	targetVector.applyQuaternion(quaternion);
+
+	return targetVector;
+}
 
 /**
  * calf_l
