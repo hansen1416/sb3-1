@@ -146,10 +146,16 @@
 		threeScene.onFrameUpdate();
 
 		sceneManager.onFrameUpdate();
-		// @ts-ignore
-		if (sceneManager.item_meshes[ballUUID] && sceneManager.item_meshes[ballUUID].position.z > 6) {
+
+		if (
+			sceneManager.item_meshes[ballUUID] &&
+			// @ts-ignore
+			sceneManager.item_meshes[ballUUID].position.z > 6
+		) {
 			// todo, ball is out of box, clear its mesh and rigid body
-			sceneManager.clearBall(ballUUID)
+			sceneManager.clearBall(ballUUID);
+
+			ballUUID = sceneManager.addBall();
 		}
 
 		animationPointer = requestAnimationFrame(animate);
