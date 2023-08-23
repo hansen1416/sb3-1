@@ -8,44 +8,6 @@
 	import RapierWorld from "../lib/RapierWorld";
 	import SceneManager from "../lib/SceneManager";
 
-	/**
-	 * what do I need?
-	 *
-	 * class to build the scene, add objects
-	 * 		this class will need ThreeScene and PhysicsWorld
-	 * 		how does it handle moving object?
-	 *
-	 * class to map the joints to character rotations, only uppder body
-	 * 		this class take model bones and pose3d as parameter
-	 *
-	 * class to record and watch a series of joints positions, only hands for now
-	 * 		this class take pose3d as pamameter
-	 * 		it determine toss and running
-	 * 		how to pass the result to character and world?
-	 *
-	 * class to watch the pose, do running, defend and toss
-	 * 		this class take model bones and pose3d as parameter
-	 * 		how does it pass result to world?
-	 *
-	 *
-	 * Factory Pattern:
-	 * Use the factory pattern to create instances of game objects, such as items and characters.
-	 * This will allow you to easily create new instances with different configurations without having to modify the constructor functions.
-	 *
-	 * Singleton Pattern:
-	 * If you have any components that should only have a single instance throughout the game,
-	 * such as a game manager or a resource manager,
-	 * use the singleton pattern to ensure that only one instance is created.
-	 *
-	 * Observer Pattern:
-	 * Use the observer pattern to handle user pose events and interactions between the player's model and the objects in the 3D scene.
-	 * This pattern allows you to decouple the event source (user pose) from the event listeners (player's model and game objects),
-	 * making it easier to add, remove,
-	 * or modify event listeners without affecting the event source.
-	 *
-	 * use Observer for Architect
-	 */
-
 	/** @type {ThreeScene} */
 	let threeScene;
 	/** @type {RapierWorld} */
@@ -56,9 +18,12 @@
 	let canvas;
 
 	let assetReady = false,
+		wssReady = false,
 		animationPointer;
 
 	let ballUUID;
+
+	let wss;
 
 	const sceneWidth = document.documentElement.clientWidth;
 	const sceneHeight = document.documentElement.clientHeight;
@@ -130,16 +95,46 @@
 				sceneManager.moveBounceBoard(e.key);
 			});
 
+			// create a new WebSocket object
+			wss = new WebSocket(
+				"ws://" + import.meta.env.VITE_WS_HOST + ":5174"
+			);
+
+			// handle the open event
+			wss.addEventListener("open", function (event) {
+				console.log("WebSocket connection established");
+				wssReady = true;
+			});
+
+			// handle the message event
+			wss.addEventListener("message", function (event) {
+				console.log("WebSocket message received:", event.data);
+			});
+
+			// handle the close event
+			wss.addEventListener("close", function (event) {
+				console.log("WebSocket connection closed");
+			});
+
+			// handle the error event
+			wss.addEventListener("error", function (event) {
+				console.error("WebSocket error:", event);
+			});
+
 			assetReady = true;
 		});
 	});
 
 	onDestroy(() => {
 		cancelAnimationFrame(animationPointer);
+
+		if (wss) {
+			wss.close();
+		}
 	});
 
 	// when mannequin, model and camera are erady, start animation loop
-	$: if (assetReady) {
+	$: if (assetReady && wssReady) {
 		animate();
 		// set player pos, camera pos, control target
 		// we need the animation to update at least once to let raycasting work
@@ -160,7 +155,11 @@
 		) {
 			// todo, ball is out of box, clear its mesh and rigid body
 			sceneManager.clearBall(ballUUID);
+
+			ballUUID = sceneManager.addBall();
 		}
+
+		// todo, send the Observation to stablebaseline3
 
 		animationPointer = requestAnimationFrame(animate);
 	}
