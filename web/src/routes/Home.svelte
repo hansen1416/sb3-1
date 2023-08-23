@@ -58,7 +58,7 @@
 	let assetReady = false,
 		animationPointer;
 
-	let ballMesh;
+	let ballUUID;
 
 	const sceneWidth = document.documentElement.clientWidth;
 	const sceneHeight = document.documentElement.clientHeight;
@@ -122,7 +122,7 @@
 				0x0000ff
 			);
 
-			ballMesh = sceneManager.addBall();
+			ballUUID = sceneManager.addBall();
 
 			assetReady = true;
 		});
@@ -146,10 +146,10 @@
 		threeScene.onFrameUpdate();
 
 		sceneManager.onFrameUpdate();
-
-		if (ballMesh.position.z > 5) {
+		// @ts-ignore
+		if (sceneManager.item_meshes[ballUUID] && sceneManager.item_meshes[ballUUID].position.z > 6) {
 			// todo, ball is out of box, clear its mesh and rigid body
-			threeScene.clearBallMesh(ballMesh);
+			sceneManager.clearBall(ballUUID)
 		}
 
 		animationPointer = requestAnimationFrame(animate);

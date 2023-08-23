@@ -171,21 +171,4 @@ export default class ThreeScene {
 
 		return mesh;
 	}
-
-	/**
-	 *
-	 * @param {THREE.Mesh} mesh
-	 */
-	clearBallMesh(mesh) {
-		// Dispose of the mesh's geometry and material
-		mesh.geometry.dispose();
-		mesh.material.dispose();
-
-		// Remove the mesh from the scene
-		this.scene.remove(mesh);
-
-		this.renderer.renderLists.dispose();
-
-		console.log(mesh);
-	}
 }

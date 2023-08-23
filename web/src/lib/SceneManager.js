@@ -7,14 +7,22 @@ let instance;
 
 export default class SceneManager {
 	/**
-	 * @type {Mesh[]}
+	 * @type {{[key: string]: Mesh}}
 	 */
-	item_meshes = [];
+	item_meshes = {};
 
 	/**
-	 * @type {import("./RapierWorld").RigidBody[]}
+	 * @type {{[key: string]: import("./RapierWorld").RigidBody}}
 	 */
-	item_rigid = [];
+	item_rigid = {};
+
+	/**
+	 * @type {{[key: string]: import("./RapierWorld").Collider}}
+	 * @description this is a reference to the collider, so we can remove it from the physics world
+	 * when we remove the rigid body
+	 * @see {@link https://www.npmjs.com/package/@dimforge/rapier3d#colliders}
+	 */
+	item_collider = {};
 
 	/**
 	 *
@@ -33,12 +41,12 @@ export default class SceneManager {
 	}
 
 	onFrameUpdate() {
-		for (let i in this.item_rigid) {
-			const t = this.item_rigid[i].translation();
-			this.item_meshes[i].position.set(t.x, t.y, t.z);
+		for (let k in this.item_rigid) {
+			const t = this.item_rigid[k].translation();
+			this.item_meshes[k].position.set(t.x, t.y, t.z);
 
-			const r = this.item_rigid[i].rotation();
-			this.item_meshes[i].setRotationFromQuaternion(
+			const r = this.item_rigid[k].rotation();
+			this.item_meshes[k].setRotationFromQuaternion(
 				new THREE.Quaternion(r.x, r.y, r.z, r.w)
 			);
 		}
@@ -115,19 +123,51 @@ export default class SceneManager {
 			rotation
 		);
 
-		this.item_rigid.push(rigid);
-		this.item_meshes.push(mesh);
+		this.item_rigid[mesh.uuid] = rigid;
+		this.item_meshes[mesh.uuid] = mesh;
 	}
 
+	/**
+	 *
+	 * @returns {string}
+	 */
 	addBall() {
 		const size = 0.1;
 
 		const mesh = this.renderer.createBall(size);
-		const rigid = this.physics.createBall(size);
+		const [rigid, collider] = this.physics.createBall(size);
 
-		this.item_rigid.push(rigid);
-		this.item_meshes.push(mesh);
+		this.item_rigid[mesh.uuid] = rigid;
+		this.item_meshes[mesh.uuid] = mesh;
+		this.item_collider[mesh.uuid] = collider;
 
-		return mesh;
+		return mesh.uuid;
+	}
+
+	/**
+	 *
+	 * @param {string} uuid
+	 */
+	clearBall(uuid) {
+		// Dispose of the mesh's geometry and material
+		this.item_meshes[uuid].geometry.dispose();
+		// @ts-ignore
+		this.item_meshes[uuid].material.dispose();
+
+		// Remove the mesh from the scene
+		this.renderer.scene.remove(this.item_meshes[uuid]);
+
+		// remove collider from physics world
+		this.physics.world.removeCollider(this.item_collider[uuid], false);
+
+		// remove rigid body from physics world
+		this.physics.world.removeRigidBody(this.item_rigid[uuid]);
+
+		// remove from our references
+		delete this.item_meshes[uuid];
+		delete this.item_collider[uuid];
+		delete this.item_rigid[uuid];
+
+		// this.renderer.renderer.renderLists.dispose();
 	}
 }

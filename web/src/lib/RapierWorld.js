@@ -112,7 +112,7 @@ export default class RapierWorld {
 	/**
 	 *
 	 * @param {number} size
-	 * @returns
+	 * @returns {[RigidBody, Collider]}
 	 */
 	createBall(size) {
 		const speed = 10;
@@ -134,9 +134,9 @@ export default class RapierWorld {
 			.setRestitution(this.restitution) // @ts-ignore
 			.setRestitutionCombineRule(this.CoefficientCombineRule.Max);
 		// .setCollisionGroups(CollisionMask.ActorMask | CollisionMask.TouchActor);
-		this.world.createCollider(clDesc, rigid);
+		const collider = this.world.createCollider(clDesc, rigid);
 
-		return rigid;
+		return [rigid, collider];
 	}
 
 	destructor() {
