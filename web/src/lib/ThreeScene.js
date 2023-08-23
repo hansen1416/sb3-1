@@ -171,4 +171,16 @@ export default class ThreeScene {
 
 		return mesh;
 	}
+
+	createBounceBoard() {
+		const mesh = new THREE.Mesh(
+			new THREE.BoxGeometry(1, 1, 0.1), // @ts-ignore
+			new THREE.MeshNormalMaterial()
+		);
+		mesh.castShadow = true;
+
+		this.scene.add(mesh);
+
+		return mesh;
+	}
 }

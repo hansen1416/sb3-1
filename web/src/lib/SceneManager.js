@@ -25,6 +25,11 @@ export default class SceneManager {
 	item_collider = {};
 
 	/**
+	 * @type {import("./RapierWorld").RigidBody}
+	 */
+	bounce_board;
+
+	/**
 	 *
 	 * @param {ThreeScene} renderer
 	 * @param {RapierWorld} physics
@@ -169,5 +174,40 @@ export default class SceneManager {
 		delete this.item_rigid[uuid];
 
 		// this.renderer.renderer.renderLists.dispose();
+	}
+
+	addBounceBoard() {
+		const mesh = this.renderer.createBounceBoard();
+
+		this.bounce_board = this.physics.createBounceBoard();
+
+		this.item_rigid[mesh.uuid] = this.bounce_board;
+		this.item_meshes[mesh.uuid] = mesh;
+	}
+
+	/**
+	 *
+	 * @param {string} direction
+	 */
+	moveBounceBoard(direction) {
+		const t = this.bounce_board.translation();
+
+		switch (direction) {
+			case "w": // w key
+				t.y += 0.5;
+
+				break;
+			case "a": // a key
+				t.x -= 0.5;
+				break;
+			case "s": // s key
+				t.y -= 0.5;
+				break;
+			case "d": // d key
+				t.x += 0.5;
+				break;
+		}
+
+		this.bounce_board.setTranslation(t, true);
 	}
 }

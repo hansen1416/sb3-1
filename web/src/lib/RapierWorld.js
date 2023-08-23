@@ -11,6 +11,7 @@
  * @typedef {{x: number, y: number, z: number}} vec3
  */
 
+import { Vector3, Quaternion } from "three";
 import { randomVecWithinAngelDistance } from "../utils/ropes";
 
 let instance;
@@ -78,6 +79,10 @@ export default class RapierWorld {
 		this.world.step();
 	}
 
+	destructor() {
+		this.world.free();
+	}
+
 	/**
 	 * create a rigid body with a collider, of shape plane
 	 *
@@ -139,7 +144,27 @@ export default class RapierWorld {
 		return [rigid, collider];
 	}
 
-	destructor() {
-		this.world.free();
+	/**
+	 *
+	 * @returns {RigidBody}
+	 */
+	createBounceBoard() {
+		const pos = new Vector3(0, 0, 5);
+		const rot = new Quaternion();
+		// @ts-ignore
+		const rbDesc = this.RigidBodyDesc.fixed()
+			.setTranslation(pos.x, pos.y, pos.z)
+			.setRotation(rot, true);
+
+		const rigid = this.world.createRigidBody(rbDesc);
+
+		// @ts-ignore
+		const clDesc = this.ColliderDesc.cuboid(0.5, 0.5, 0.05)
+			.setFriction(this.friction)
+			.setRestitution(this.restitution);
+
+		this.world.createCollider(clDesc, rigid);
+
+		return rigid;
 	}
 }
