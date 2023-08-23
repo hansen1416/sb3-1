@@ -124,6 +124,8 @@
 
 			ballUUID = sceneManager.addBall();
 
+			sceneManager.addBounceBoard();
+
 			assetReady = true;
 		});
 	});
