@@ -10,6 +10,7 @@
  * @typedef {import('../../node_modules/@dimforge/rapier3d/pipeline/query_pipeline').QueryFilterFlags} QueryFilterFlags
  * @typedef {{x: number, y: number, z: number}} vec3
  */
+
 import { Vector3, Quaternion } from "three";
 import { randomVecWithinAngelDistance } from "../utils/ropes";
 
@@ -143,16 +144,13 @@ export default class RapierWorld {
 		return [rigid, collider];
 	}
 
+	/**
+	 *
+	 * @returns {RigidBody}
+	 */
 	createBounceBoard() {
-		// cuboid
-
 		const pos = new Vector3(0, 0, 5);
 		const rot = new Quaternion();
-
-		// .setFromAxisAngle(
-		// 	new Vector3(1, 0, 0),
-		// 	Math.PI / 2
-		// )
 
 		// @ts-ignore
 		const rbDesc = this.RigidBodyDesc.fixed()
