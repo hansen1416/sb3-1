@@ -25,6 +25,8 @@
 
 	let wss;
 
+	let isBallHitBounceBoard = false;
+
 	const sceneWidth = document.documentElement.clientWidth;
 	const sceneHeight = document.documentElement.clientHeight;
 
@@ -37,12 +39,8 @@
 			physicsWorld = new RapierWorld(RAPIER);
 
 			sceneManager = new SceneManager(threeScene, physicsWorld);
-			// a box with one side empty
-			sceneManager.addBox();
-			// bounce board to catch the ball
-			sceneManager.addBounceBoard();
-			// ball gets recycled when its out of the box range
-			ballUUID = sceneManager.addBall();
+
+			ballUUID = sceneManager.buildScene();
 
 			window.addEventListener("keydown", (e) => {
 				sceneManager.moveBounceBoard(e.key);
@@ -61,7 +59,8 @@
 
 			// handle the message event
 			wss.addEventListener("message", function (event) {
-				console.log("WebSocket message received:", event.data);
+				// console.log("WebSocket message received:", event.data);
+				sceneManager.moveBounceBoard(event.data);
 			});
 
 			// handle the close event
@@ -86,6 +85,12 @@
 		}
 	});
 
+	function onBallHitBounceBoard() {
+		// console.log("onBallHitBounceBoard");
+		// todo, send the Observation to stablebaseline3
+		isBallHitBounceBoard = true;
+	}
+
 	// when mannequin, model and camera are erady, start animation loop
 	$: if (assetReady && wssReady) {
 		animate();
@@ -101,8 +106,20 @@
 		// sync rigid body and threejs mesh
 		sceneManager.onFrameUpdate();
 
+		isBallHitBounceBoard = false;
+
+		const ball_pos = physicsWorld.getBallPosition();
+
 		if (sceneManager.item_rigid[ballUUID]) {
-			// console.log(sceneManager.item_rigid[ballUUID].translation());
+			physicsWorld.ballHitBoard(onBallHitBounceBoard);
+
+			// todo, send the Observation to stablebaseline3
+			console.log(
+				isBallHitBounceBoard,
+				physicsWorld.getBallVelocity(),
+				physicsWorld.getBallPosition(),
+				physicsWorld.getBounceBoardPosition()
+			);
 
 			if (
 				// @ts-ignore
@@ -112,11 +129,9 @@
 				//  ball is out of box, clear its mesh and rigid body
 				sceneManager.clearBall(ballUUID);
 
-				// ballUUID = sceneManager.addBall();
+				ballUUID = sceneManager.addBall();
 			}
 		}
-
-		// todo, send the Observation to stablebaseline3
 
 		animationPointer = requestAnimationFrame(animate);
 	}

@@ -92,7 +92,7 @@ export default class SceneManager {
 		const color = 0x525fe1;
 
 		// right
-		this.addBoard(
+		this.addBoxSide(
 			new Vector3(this.box_size / 2, 0, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(
 				new Vector3(0, 0, 1),
@@ -102,7 +102,7 @@ export default class SceneManager {
 		);
 
 		// back
-		this.addBoard(
+		this.addBoxSide(
 			new Vector3(0, 0, -this.box_size),
 			new Quaternion().setFromAxisAngle(
 				new Vector3(1, 0, 0),
@@ -112,7 +112,7 @@ export default class SceneManager {
 		);
 
 		// left
-		this.addBoard(
+		this.addBoxSide(
 			new Vector3(this.box_size / -2, 0, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(
 				new Vector3(0, 0, 1),
@@ -122,14 +122,14 @@ export default class SceneManager {
 		);
 
 		// top
-		this.addBoard(
+		this.addBoxSide(
 			new Vector3(0, this.box_size / 2, this.box_size / -2),
 			new Quaternion(),
 			color
 		);
 
 		// bottom
-		this.addBoard(
+		this.addBoxSide(
 			new Vector3(0, this.box_size / -2, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI),
 			color
@@ -143,7 +143,7 @@ export default class SceneManager {
 	 * @param {THREE.Quaternion} rotation
 	 * @param {number} color
 	 */
-	addBoard(position, rotation = new THREE.Quaternion(), color = 0xff0000) {
+	addBoxSide(position, rotation = new THREE.Quaternion(), color = 0xff0000) {
 		const a = new Vector3(this.box_size / -2, 0, this.box_size / -2);
 		const b = new Vector3(this.box_size / -2, 0, this.box_size / 2);
 		const c = new Vector3(this.box_size / 2, 0, this.box_size / -2);
@@ -182,50 +182,6 @@ export default class SceneManager {
 
 		this.item_rigid[mesh.uuid] = rigid;
 		this.item_meshes[mesh.uuid] = mesh;
-	}
-
-	/**
-	 *
-	 * @returns {string}
-	 */
-	addBall() {
-		const size = 0.2;
-
-		const mesh = this.renderer.createBall(size);
-		const [rigid, collider] = this.physics.createBall(size);
-
-		this.item_rigid[mesh.uuid] = rigid;
-		this.item_meshes[mesh.uuid] = mesh;
-		this.item_collider[mesh.uuid] = collider;
-
-		return mesh.uuid;
-	}
-
-	/**
-	 *
-	 * @param {string} uuid
-	 */
-	clearBall(uuid) {
-		// Dispose of the mesh's geometry and material
-		this.item_meshes[uuid].geometry.dispose();
-		// @ts-ignore
-		this.item_meshes[uuid].material.dispose();
-
-		// Remove the mesh from the scene
-		this.renderer.scene.remove(this.item_meshes[uuid]);
-
-		// remove collider from physics world
-		this.physics.world.removeCollider(this.item_collider[uuid], false);
-
-		// remove rigid body from physics world
-		this.physics.world.removeRigidBody(this.item_rigid[uuid]);
-
-		// remove from our references
-		delete this.item_meshes[uuid];
-		delete this.item_collider[uuid];
-		delete this.item_rigid[uuid];
-
-		// this.renderer.renderer.renderLists.dispose();
 	}
 
 	addBounceBoard() {
@@ -269,5 +225,61 @@ export default class SceneManager {
 		t.y = clamp(t.y, lower, upper);
 
 		this.bounce_board.setTranslation(t, true);
+	}
+	/**
+	 *
+	 * @returns {string}
+	 */
+	addBall() {
+		const size = 0.2;
+		// move the ball slightly back, so it won't touch the board when lauching
+		const pos = new Vector3(0, 0, -0.2);
+
+		const mesh = this.renderer.createBall(size, pos);
+		const [rigid, collider] = this.physics.createBall(size, pos);
+
+		this.item_rigid[mesh.uuid] = rigid;
+		this.item_meshes[mesh.uuid] = mesh;
+		this.item_collider[mesh.uuid] = collider;
+
+		return mesh.uuid;
+	}
+
+	/**
+	 *
+	 * @param {string} uuid
+	 */
+	clearBall(uuid) {
+		// Dispose of the mesh's geometry and material
+		this.item_meshes[uuid].geometry.dispose();
+		// @ts-ignore
+		this.item_meshes[uuid].material.dispose();
+
+		// Remove the mesh from the scene
+		this.renderer.scene.remove(this.item_meshes[uuid]);
+
+		// remove collider from physics world
+		this.physics.world.removeCollider(this.item_collider[uuid], false);
+
+		// remove rigid body from physics world
+		this.physics.world.removeRigidBody(this.item_rigid[uuid]);
+
+		// remove from our references
+		delete this.item_meshes[uuid];
+		delete this.item_collider[uuid];
+		delete this.item_rigid[uuid];
+
+		// this.renderer.renderer.renderLists.dispose();
+	}
+
+	buildScene() {
+		// a box with one side empty
+		this.addBox();
+		// bounce board to catch the ball
+		this.addBounceBoard();
+		// ball gets recycled when its out of the box range
+		const uuid = this.addBall();
+
+		return uuid;
 	}
 }

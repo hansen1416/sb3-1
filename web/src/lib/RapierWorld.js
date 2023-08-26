@@ -8,6 +8,7 @@
  * @typedef {import('../../node_modules/@dimforge/rapier3d/control/character_controller').KinematicCharacterController} KinematicCharacterController
  * @typedef {import('../../node_modules/@dimforge/rapier3d/geometry/ray').Ray} Ray
  * @typedef {import('../../node_modules/@dimforge/rapier3d/pipeline/query_pipeline').QueryFilterFlags} QueryFilterFlags
+ * @typedef {import('../../node_modules/@dimforge/rapier3d/pipeline/event_queue').ActiveEvents} ActiveEvents
  * @typedef {{x: number, y: number, z: number}} vec3
  */
 
@@ -43,7 +44,22 @@ export default class RapierWorld {
 	/**
 	 * @type {RigidBody}
 	 */
-	character_rigid;
+	ball_rigid;
+
+	/**
+	 * @type {RigidBody}
+	 */
+	bounce_board_rigid;
+
+	/**
+	 * @type {Collider}
+	 */
+	ball_collider;
+
+	/**
+	 * @type {Collider}
+	 */
+	bounce_board_collider;
 
 	/**
 	 *
@@ -70,6 +86,8 @@ export default class RapierWorld {
 		this.Ray = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
 		/** @type {QueryFilterFlags} */
 		this.QueryFilterFlags = RAPIER.QueryFilterFlags;
+		/** @type {ActiveEvents} */
+		this.events = RAPIER.ActiveEvents;
 	}
 
 	/**
@@ -117,19 +135,21 @@ export default class RapierWorld {
 	/**
 	 *
 	 * @param {number} size
+	 * @param {vec3} pos
 	 * @returns {[RigidBody, Collider]}
 	 */
-	createBall(size) {
+	createBall(size, pos) {
 		const speed = 10;
 		const velocity = randomVecWithinAngelDistance().multiplyScalar(speed);
 
 		// @ts-ignore
 		const rbDesc = this.RigidBodyDesc.dynamic()
+			.setTranslation(pos.x, pos.y, pos.z)
 			.setLinearDamping(this.liner_damping)
 			.setLinvel(velocity.x, velocity.y, velocity.z)
 			// .restrictRotations(false, true, false) // Y-axis only
 			.setCcdEnabled(true);
-		const rigid = this.world.createRigidBody(rbDesc);
+		this.ball_rigid = this.world.createRigidBody(rbDesc);
 
 		// @ts-ignore
 		const clDesc = this.ColliderDesc.ball(size)
@@ -139,9 +159,9 @@ export default class RapierWorld {
 			.setRestitution(this.restitution) // @ts-ignore
 			.setRestitutionCombineRule(this.CoefficientCombineRule.Max);
 		// .setCollisionGroups(CollisionMask.ActorMask | CollisionMask.TouchActor);
-		const collider = this.world.createCollider(clDesc, rigid);
+		this.ball_collider = this.world.createCollider(clDesc, this.ball_rigid);
 
-		return [rigid, collider];
+		return [this.ball_rigid, this.ball_collider];
 	}
 
 	/**
@@ -157,15 +177,69 @@ export default class RapierWorld {
 			.setTranslation(pos.x, pos.y, pos.z)
 			.setRotation(rot, true);
 
-		const rigid = this.world.createRigidBody(rbDesc);
+		this.bounce_board_rigid = this.world.createRigidBody(rbDesc);
 
 		// @ts-ignore
 		const clDesc = this.ColliderDesc.cuboid(size / 2, size / 2, 0.05)
+			// @ts-ignore
+			.setActiveEvents(this.events.COLLISION_EVENTS)
 			.setFriction(this.friction)
 			.setRestitution(this.restitution);
 
-		this.world.createCollider(clDesc, rigid);
+		this.bounce_board_collider = this.world.createCollider(
+			clDesc,
+			this.bounce_board_rigid
+		);
 
-		return rigid;
+		/* Set the active events after the collider creation. */
+		// this.bounce_board_collider.setActiveEvents(
+		// 	RAPIER.ActiveEvents.COLLISION_EVENTS
+		// );
+
+		return this.bounce_board_rigid;
+	}
+
+	/**
+	 * when ball and bounce board collide
+	 *
+	 * @param {function} callback
+	 */
+	ballHitBoard(callback) {
+		this.world.contactPair(
+			this.ball_collider,
+			this.bounce_board_collider,
+			(manifold, flipped) => {
+				// Contact information can be read from `manifold`.
+				// console.log(manifold, flipped);
+
+				callback();
+			}
+		);
+	}
+
+	/**
+	 *
+	 * @returns {vec3}
+	 */
+	getBounceBoardPosition() {
+		return this.bounce_board_rigid.translation();
+	}
+
+	/**
+	 *
+	 * @returns {vec3 | boolean}
+	 */
+	getBallPosition() {
+		if (!this.ball_rigid) {
+			return false;
+		}
+		return this.ball_rigid.translation();
+	}
+
+	getBallVelocity() {
+		if (!this.ball_rigid) {
+			return false;
+		}
+		return this.ball_rigid.linvel();
 	}
 }

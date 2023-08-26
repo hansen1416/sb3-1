@@ -158,9 +158,10 @@ export default class ThreeScene {
 
 	/**
 	 * @param {number} size
+	 * @param {Vector3} pos
 	 * @returns {THREE.Mesh}
 	 */
-	createBall(size) {
+	createBall(size, pos) {
 		const mesh = new THREE.Mesh(
 			new THREE.SphereGeometry(size), // @ts-ignore
 			new THREE.MeshBasicMaterial({ color: 0xfea1179 })
@@ -168,6 +169,8 @@ export default class ThreeScene {
 		mesh.castShadow = true;
 
 		this.scene.add(mesh);
+
+		mesh.position.copy(pos);
 
 		return mesh;
 	}
