@@ -25,7 +25,9 @@
 
 	let wss;
 
-	let isBallHitBounceBoard = false;
+	let reward = 0;
+
+	let received_action = false;
 
 	const sceneWidth = document.documentElement.clientWidth;
 	const sceneHeight = document.documentElement.clientHeight;
@@ -61,6 +63,8 @@
 			wss.addEventListener("message", function (event) {
 				// console.log("WebSocket message received:", event.data);
 				sceneManager.moveBounceBoard(event.data);
+
+				received_action = true;
 			});
 
 			// handle the close event
@@ -88,7 +92,7 @@
 	function onBallHitBounceBoard() {
 		// console.log("onBallHitBounceBoard");
 		// todo, send the Observation to stablebaseline3
-		isBallHitBounceBoard = true;
+		reward += 1;
 	}
 
 	// when mannequin, model and camera are erady, start animation loop
@@ -106,31 +110,64 @@
 		// sync rigid body and threejs mesh
 		sceneManager.onFrameUpdate();
 
-		isBallHitBounceBoard = false;
+		if (received_action) {
+			let done = 0;
+			let ball_vel = { x: 0, y: 0, z: 0 };
+			let ball_pos = { x: 0, y: 0, z: 0 };
+			let board_pos = { x: 0, y: 0, z: 0 };
 
-		const ball_pos = physicsWorld.getBallPosition();
+			if (sceneManager.item_rigid[ballUUID]) {
+				// when ball hit the bounce board, update reward
+				physicsWorld.ballHitBoard(onBallHitBounceBoard);
 
-		if (sceneManager.item_rigid[ballUUID]) {
-			physicsWorld.ballHitBoard(onBallHitBounceBoard);
+				// todo, send the Observation to stablebaseline3
+				// console.log(
+				// 	reward,
+				// 	physicsWorld.getBallVelocity(),
+				// 	physicsWorld.getBallPosition(),
+				// 	physicsWorld.getBounceBoardPosition()
+				// );
 
-			// todo, send the Observation to stablebaseline3
-			console.log(
-				isBallHitBounceBoard,
-				physicsWorld.getBallVelocity(),
-				physicsWorld.getBallPosition(),
-				physicsWorld.getBounceBoardPosition()
+				ball_vel = physicsWorld.getBallVelocity();
+				ball_pos = physicsWorld.getBallPosition();
+				board_pos = physicsWorld.getBounceBoardPosition();
+
+				if (
+					// @ts-ignore
+					sceneManager.item_rigid[ballUUID].translation().z > 6
+				) {
+					// reset env
+					//  ball is out of box, clear its mesh and rigid body
+					sceneManager.clearBall(ballUUID);
+
+					ballUUID = sceneManager.addBall();
+
+					reward = 0;
+
+					done = 1;
+				}
+			}
+
+			// send observations
+			wss.send(
+				JSON.stringify({
+					observation: [
+						ball_vel.x,
+						ball_vel.y,
+						ball_vel.z,
+						ball_pos.x,
+						ball_pos.y,
+						ball_pos.z,
+						board_pos.x,
+						board_pos.y,
+						board_pos.z,
+					],
+					reward: reward,
+					done: done,
+				})
 			);
 
-			if (
-				// @ts-ignore
-				sceneManager.item_rigid[ballUUID].translation().z > 6
-			) {
-				// reset env
-				//  ball is out of box, clear its mesh and rigid body
-				sceneManager.clearBall(ballUUID);
-
-				ballUUID = sceneManager.addBall();
-			}
+			received_action = false;
 		}
 
 		animationPointer = requestAnimationFrame(animate);

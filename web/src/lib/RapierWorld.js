@@ -227,19 +227,17 @@ export default class RapierWorld {
 
 	/**
 	 *
-	 * @returns {vec3 | boolean}
+	 * @returns {vec3}
 	 */
 	getBallPosition() {
-		if (!this.ball_rigid) {
-			return false;
-		}
 		return this.ball_rigid.translation();
 	}
 
+	/**
+	 *
+	 * @returns {vec3}
+	 */
 	getBallVelocity() {
-		if (!this.ball_rigid) {
-			return false;
-		}
 		return this.ball_rigid.linvel();
 	}
 }

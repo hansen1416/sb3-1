@@ -63,15 +63,24 @@ class BounceEnv(gym.Env):
 
         # self.prev_actions.append(action)
 
+        # send action to the game
+        if action == 0:
+            self.ws.send("s")
+        elif action == 1:
+            self.ws.send("a")
+        elif action == 2:
+            self.ws.send("d")
+        elif action == 3:
+            self.ws.send("w")
+
         observation: ObservationDict = {"ball_position": np.array([0,0,0], dtype=np.float32), "board_position": np.array([0,0,0], dtype=np.float32), "ball_velocity": np.array([0,0,0], dtype=np.float32)}
         reward = 0
         done = False
         info = {}
+        
+        msg = self.ws.recv()
 
-        self.ws.send("w")
-        self.ws.send("a")
-        self.ws.send("s")
-        self.ws.send("d")
+        print(msg)
 
         return observation, reward, done, False, info
 
