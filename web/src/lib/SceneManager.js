@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Vector3, Mesh } from "three";
+import { Vector3, Mesh, Quaternion } from "three";
 import ThreeScene from "./ThreeScene";
 import RapierWorld from "./RapierWorld";
 
@@ -79,6 +79,63 @@ export default class SceneManager {
 	}
 
 	/**
+	 *
+	 * @param {number} size
+	 */
+	addBox(size) {
+		const color = 0x525fe1;
+
+		// right
+		this.addBoard(
+			size,
+			new Vector3(size / 2, 0, size / -2),
+			new Quaternion().setFromAxisAngle(
+				new Vector3(0, 0, 1),
+				Math.PI / 2
+			),
+			color
+		);
+
+		// back
+		this.addBoard(
+			size,
+			new Vector3(0, 0, -size),
+			new Quaternion().setFromAxisAngle(
+				new Vector3(1, 0, 0),
+				Math.PI / 2
+			),
+			color
+		);
+
+		// left
+		this.addBoard(
+			size,
+			new Vector3(size / -2, 0, size / -2),
+			new Quaternion().setFromAxisAngle(
+				new Vector3(0, 0, 1),
+				-Math.PI / 2
+			),
+			color
+		);
+
+		// top
+		this.addBoard(
+			size,
+			new Vector3(0, size / 2, size / -2),
+			new Quaternion(),
+			color
+		);
+
+		// bottom
+		this.addBoard(
+			size,
+			new Vector3(0, size / -2, size / -2),
+			new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI),
+			color
+		);
+	}
+
+	/**
 	 * create a plane, with a rigid body, collider, and mesh
 	 *
 	 * @param {number} size
@@ -137,7 +194,7 @@ export default class SceneManager {
 	 * @returns {string}
 	 */
 	addBall() {
-		const size = 0.1;
+		const size = 0.2;
 
 		const mesh = this.renderer.createBall(size);
 		const [rigid, collider] = this.physics.createBall(size);

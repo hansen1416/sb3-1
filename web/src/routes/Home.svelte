@@ -37,59 +37,12 @@
 			physicsWorld = new RapierWorld(RAPIER);
 
 			sceneManager = new SceneManager(threeScene, physicsWorld);
-
-			const size = 10;
-
-			sceneManager.addBoard(
-				size,
-				new Vector3(size / 2, 0, 0),
-				new Quaternion().setFromAxisAngle(
-					new Vector3(0, 0, 1),
-					Math.PI / 2
-				),
-				0x0000ff
-			);
-
-			sceneManager.addBoard(
-				size,
-				new Vector3(0, 0, -size / 2),
-				new Quaternion().setFromAxisAngle(
-					new Vector3(1, 0, 0),
-					Math.PI / 2
-				),
-				0x0000ff
-			);
-
-			sceneManager.addBoard(
-				size,
-				new Vector3(size / -2, 0, 0),
-				new Quaternion().setFromAxisAngle(
-					new Vector3(0, 0, 1),
-					-Math.PI / 2
-				),
-				0x0000ff
-			);
-
-			sceneManager.addBoard(
-				size,
-				new Vector3(0, size / 2, 0),
-				new Quaternion(),
-				0x0000ff
-			);
-
-			sceneManager.addBoard(
-				size,
-				new Vector3(0, size / -2, 0),
-				new Quaternion().setFromAxisAngle(
-					new Vector3(0, 0, 1),
-					Math.PI
-				),
-				0x0000ff
-			);
-
-			ballUUID = sceneManager.addBall();
-
+			// a box with one side empty
+			sceneManager.addBox(10);
+			// bounce board to catch the ball
 			sceneManager.addBounceBoard();
+			// ball gets recycled when its out of the box range
+			ballUUID = sceneManager.addBall();
 
 			window.addEventListener("keydown", (e) => {
 				sceneManager.moveBounceBoard(e.key);
@@ -156,7 +109,7 @@
 			// todo, ball is out of box, clear its mesh and rigid body
 			sceneManager.clearBall(ballUUID);
 
-			ballUUID = sceneManager.addBall();
+			// ballUUID = sceneManager.addBall();
 		}
 
 		// todo, send the Observation to stablebaseline3

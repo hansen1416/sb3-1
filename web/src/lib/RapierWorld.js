@@ -149,7 +149,7 @@ export default class RapierWorld {
 	 * @returns {RigidBody}
 	 */
 	createBounceBoard() {
-		const pos = new Vector3(0, 0, 5);
+		const pos = new Vector3(0, 0, 0);
 		const rot = new Quaternion();
 
 		// @ts-ignore

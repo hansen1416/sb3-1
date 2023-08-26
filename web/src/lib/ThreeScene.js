@@ -163,7 +163,7 @@ export default class ThreeScene {
 	createBall(size) {
 		const mesh = new THREE.Mesh(
 			new THREE.SphereGeometry(size), // @ts-ignore
-			new THREE.MeshNormalMaterial()
+			new THREE.MeshBasicMaterial({ color: 0xfea1179 })
 		);
 		mesh.castShadow = true;
 
@@ -175,7 +175,7 @@ export default class ThreeScene {
 	createBounceBoard() {
 		const mesh = new THREE.Mesh(
 			new THREE.BoxGeometry(1, 1, 0.1), // @ts-ignore
-			new THREE.MeshBasicMaterial({ color: 0xffffff })
+			new THREE.MeshBasicMaterial({ color: 0xffa41b })
 		);
 		mesh.castShadow = true;
 
