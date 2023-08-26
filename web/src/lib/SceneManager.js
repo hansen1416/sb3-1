@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Vector3, Mesh, Quaternion } from "three";
 import ThreeScene from "./ThreeScene";
 import RapierWorld from "./RapierWorld";
+import { clamp } from "lodash";
 
 let instance;
 
@@ -23,6 +24,12 @@ export default class SceneManager {
 	 * @see {@link https://www.npmjs.com/package/@dimforge/rapier3d#colliders}
 	 */
 	item_collider = {};
+
+	/** @type number */
+	box_size = 10;
+
+	/** @type number */
+	bounce_board_size = 1;
 
 	/**
 	 * @type {import("./RapierWorld").RigidBody}
@@ -80,15 +87,13 @@ export default class SceneManager {
 
 	/**
 	 *
-	 * @param {number} size
 	 */
-	addBox(size) {
+	addBox() {
 		const color = 0x525fe1;
 
 		// right
 		this.addBoard(
-			size,
-			new Vector3(size / 2, 0, size / -2),
+			new Vector3(this.box_size / 2, 0, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(
 				new Vector3(0, 0, 1),
 				Math.PI / 2
@@ -98,8 +103,7 @@ export default class SceneManager {
 
 		// back
 		this.addBoard(
-			size,
-			new Vector3(0, 0, -size),
+			new Vector3(0, 0, -this.box_size),
 			new Quaternion().setFromAxisAngle(
 				new Vector3(1, 0, 0),
 				Math.PI / 2
@@ -109,8 +113,7 @@ export default class SceneManager {
 
 		// left
 		this.addBoard(
-			size,
-			new Vector3(size / -2, 0, size / -2),
+			new Vector3(this.box_size / -2, 0, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(
 				new Vector3(0, 0, 1),
 				-Math.PI / 2
@@ -120,16 +123,14 @@ export default class SceneManager {
 
 		// top
 		this.addBoard(
-			size,
-			new Vector3(0, size / 2, size / -2),
+			new Vector3(0, this.box_size / 2, this.box_size / -2),
 			new Quaternion(),
 			color
 		);
 
 		// bottom
 		this.addBoard(
-			size,
-			new Vector3(0, size / -2, size / -2),
+			new Vector3(0, this.box_size / -2, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI),
 			color
 		);
@@ -138,21 +139,15 @@ export default class SceneManager {
 	/**
 	 * create a plane, with a rigid body, collider, and mesh
 	 *
-	 * @param {number} size
 	 * @param {Vector3} position
 	 * @param {THREE.Quaternion} rotation
 	 * @param {number} color
 	 */
-	addBoard(
-		size,
-		position,
-		rotation = new THREE.Quaternion(),
-		color = 0xff0000
-	) {
-		const a = new Vector3(size / -2, 0, size / -2);
-		const b = new Vector3(size / -2, 0, size / 2);
-		const c = new Vector3(size / 2, 0, size / -2);
-		const d = new Vector3(size / 2, 0, size / 2);
+	addBoard(position, rotation = new THREE.Quaternion(), color = 0xff0000) {
+		const a = new Vector3(this.box_size / -2, 0, this.box_size / -2);
+		const b = new Vector3(this.box_size / -2, 0, this.box_size / 2);
+		const c = new Vector3(this.box_size / 2, 0, this.box_size / -2);
+		const d = new Vector3(this.box_size / 2, 0, this.box_size / 2);
 
 		const vertices = new Float32Array([
 			a.x,
@@ -234,9 +229,11 @@ export default class SceneManager {
 	}
 
 	addBounceBoard() {
-		const mesh = this.renderer.createBounceBoard();
+		const mesh = this.renderer.createBounceBoard(this.bounce_board_size);
 
-		this.bounce_board = this.physics.createBounceBoard();
+		this.bounce_board = this.physics.createBounceBoard(
+			this.bounce_board_size
+		);
 
 		this.item_rigid[mesh.uuid] = this.bounce_board;
 		this.item_meshes[mesh.uuid] = mesh;
@@ -264,6 +261,12 @@ export default class SceneManager {
 				t.x += 0.5;
 				break;
 		}
+
+		const upper = this.box_size / 2 - this.bounce_board_size / 2;
+		const lower = this.bounce_board_size / 2 - this.box_size / 2;
+
+		t.x = clamp(t.x, lower, upper);
+		t.y = clamp(t.y, lower, upper);
 
 		this.bounce_board.setTranslation(t, true);
 	}

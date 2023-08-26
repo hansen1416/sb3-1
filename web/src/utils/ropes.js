@@ -6,11 +6,12 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { Quaternion } from "three";
 import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
+/**
+ *
+ * @param {number} ms
+ * @returns
+ */
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export function clamp(num, min, max) {
-	return num <= min ? min : num >= max ? max : num;
-}
 
 export function quaternionToAxisAngle(q) {
 	// calculate angle of rotation

@@ -172,9 +172,14 @@ export default class ThreeScene {
 		return mesh;
 	}
 
-	createBounceBoard() {
+	/**
+	 *
+	 * @param {number} size
+	 * @returns {THREE.Mesh}
+	 */
+	createBounceBoard(size) {
 		const mesh = new THREE.Mesh(
-			new THREE.BoxGeometry(1, 1, 0.1), // @ts-ignore
+			new THREE.BoxGeometry(size, size, 0.1), // @ts-ignore
 			new THREE.MeshBasicMaterial({ color: 0xffa41b })
 		);
 		mesh.castShadow = true;

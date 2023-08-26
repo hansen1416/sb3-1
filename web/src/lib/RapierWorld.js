@@ -145,10 +145,10 @@ export default class RapierWorld {
 	}
 
 	/**
-	 *
+	 * @param {number} size
 	 * @returns {RigidBody}
 	 */
-	createBounceBoard() {
+	createBounceBoard(size) {
 		const pos = new Vector3(0, 0, 0);
 		const rot = new Quaternion();
 
@@ -160,7 +160,7 @@ export default class RapierWorld {
 		const rigid = this.world.createRigidBody(rbDesc);
 
 		// @ts-ignore
-		const clDesc = this.ColliderDesc.cuboid(0.5, 0.5, 0.05)
+		const clDesc = this.ColliderDesc.cuboid(size / 2, size / 2, 0.05)
 			.setFriction(this.friction)
 			.setRestitution(this.restitution);
 

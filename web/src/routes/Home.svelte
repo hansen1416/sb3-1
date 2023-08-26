@@ -38,7 +38,7 @@
 
 			sceneManager = new SceneManager(threeScene, physicsWorld);
 			// a box with one side empty
-			sceneManager.addBox(10);
+			sceneManager.addBox();
 			// bounce board to catch the ball
 			sceneManager.addBounceBoard();
 			// ball gets recycled when its out of the box range
@@ -98,18 +98,22 @@
 		// update physics world and threejs renderer
 		physicsWorld.onFrameUpdate();
 		threeScene.onFrameUpdate();
-
+		// sync rigid body and threejs mesh
 		sceneManager.onFrameUpdate();
 
-		if (
-			sceneManager.item_meshes[ballUUID] &&
-			// @ts-ignore
-			sceneManager.item_meshes[ballUUID].position.z > 6
-		) {
-			// todo, ball is out of box, clear its mesh and rigid body
-			sceneManager.clearBall(ballUUID);
+		if (sceneManager.item_rigid[ballUUID]) {
+			// console.log(sceneManager.item_rigid[ballUUID].translation());
 
-			// ballUUID = sceneManager.addBall();
+			if (
+				// @ts-ignore
+				sceneManager.item_rigid[ballUUID].translation().z > 6
+			) {
+				// reset env
+				//  ball is out of box, clear its mesh and rigid body
+				sceneManager.clearBall(ballUUID);
+
+				// ballUUID = sceneManager.addBall();
+			}
 		}
 
 		// todo, send the Observation to stablebaseline3
