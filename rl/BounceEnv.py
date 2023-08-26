@@ -10,6 +10,9 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 import os
 from pathlib import Path
+from typing import TypedDict
+from numpy.typing import ArrayLike
+import websocket
 
 """
 game env is a 3D game, the ball is bouncing in a 3D cuboid with one side be empty, the board is trying to catch the ball
@@ -22,6 +25,11 @@ when the board catches the ball, the reward is 1
 when the ball is bounced out of the cuboid, the reward is -1
 
 """
+
+class ObservationDict(TypedDict):
+    ball_position: ArrayLike
+    board_position: ArrayLike
+    ball_velocity: ArrayLike
 
 
 class BounceEnv(gym.Env):
@@ -45,18 +53,36 @@ class BounceEnv(gym.Env):
             'ball_velocity': ball_vel_space
         })
 
+        self.ws = websocket.WebSocket()
+        self.ws.connect("ws://127.0.0.1:5174")
+
+    def __del__(self):
+        self.ws.close()
+
     def step(self, action):
 
-        self.prev_actions.append(action)
+        # self.prev_actions.append(action)
 
-        observation = np.array([])
+        observation: ObservationDict = {"ball_position": np.array([0,0,0], dtype=np.float32), "board_position": np.array([0,0,0], dtype=np.float32), "ball_velocity": np.array([0,0,0], dtype=np.float32)}
         reward = 0
         done = False
         info = {}
 
+        self.ws.send("w")
+        self.ws.send("a")
+        self.ws.send("s")
+        self.ws.send("d")
+
         return observation, reward, done, False, info
 
-    def reset(self):
-        observation = np.array([])
+    def reset(self, seed=None, options=None):
+        observation: ObservationDict = {"ball_position": np.array([0,0,0], dtype=np.float32), "board_position": np.array([0,0,0], dtype=np.float32), "ball_velocity": np.array([0,0,0], dtype=np.float32)}
         # Implement reset method
-        return observation
+        info = {}
+        return observation, info
+    
+
+
+env = BounceEnv()
+
+check_env(env)
