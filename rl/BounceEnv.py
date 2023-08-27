@@ -11,6 +11,7 @@ import websocket
 import json
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.results_plotter import load_results, ts2xy
+from tqdm.auto import tqdm
 
 """
 game env is a 3D game, the ball is bouncing in a 3D cuboid with one side be empty, the board is trying to catch the ball
@@ -83,6 +84,39 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                     self.model.save(self.save_path)
 
         return True
+
+
+class ProgressBarCallback(BaseCallback):
+    """
+    :param pbar: (tqdm.pbar) Progress bar object
+    """
+
+    def __init__(self, pbar):
+        super().__init__()
+        self._pbar = pbar
+
+    def _on_step(self):
+        # Update the progress bar:
+        self._pbar.n = self.num_timesteps
+        self._pbar.update(0)
+
+# this callback uses the 'with' block, allowing for correct initialisation and destruction
+
+
+class ProgressBarManager(object):
+    def __init__(self, total_timesteps):  # init object with total timesteps
+        self.pbar = None
+        self.total_timesteps = total_timesteps
+
+    def __enter__(self):  # create the progress bar and callback, return the callback
+        self.pbar = tqdm(total=self.total_timesteps)
+
+        return ProgressBarCallback(self.pbar)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):  # close the callback
+        self.pbar.n = self.total_timesteps
+        self.pbar.update(0)
+        self.pbar.close()
 
 
 models_dir = os.path.join('models', 'bounce-ppo')
@@ -215,9 +249,11 @@ def train_agent():
     iters = 0
     while True:
         iters += 1
-        model.learn(total_timesteps=TIMESTEPS,
-                    reset_num_timesteps=False, tb_log_name=f"{last_iter+TIMESTEPS * iters}",
-                    callback=[autosave_callback])
+
+        with ProgressBarManager(TIMESTEPS) as progress_callback:
+            model.learn(total_timesteps=TIMESTEPS,
+                        reset_num_timesteps=False, tb_log_name=f"{last_iter+TIMESTEPS * iters}",
+                        callback=[progress_callback, autosave_callback])
         model.save(f"{models_dir}/{last_iter+TIMESTEPS * iters}")
 
         if iters > 8:
@@ -230,6 +266,6 @@ if __name__ == "__main__":
 
     # check_env(env)
 
-    # train_agent()
+    train_agent()
 
     ws.close()
