@@ -139,7 +139,8 @@ export default class RapierWorld {
 	 * @returns {[RigidBody, Collider]}
 	 */
 	createBall(size, pos) {
-		const speed = 10;
+		// this is the initial speed magnitude
+		const speed = 30;
 		const velocity = randomVecWithinAngelDistance().multiplyScalar(speed);
 
 		// @ts-ignore
