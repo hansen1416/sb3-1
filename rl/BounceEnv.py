@@ -218,9 +218,6 @@ def train_agent():
     if not os.path.exists(logdir):
         os.makedirs(logdir)
 
-    autosave_callback = SaveOnBestTrainingRewardCallback(
-        check_freq=2000, log_dir=logdir, verbose=1)
-
     paths = sorted(Path(models_dir).iterdir(), key=os.path.getmtime)
 
     last_model = None
@@ -243,17 +240,22 @@ def train_agent():
         model = last_model
     else:
 
-        model = PPO('MultiInputPolicy', env, verbose=1, tensorboard_log=logdir)
+        # model = PPO('MultiInputPolicy', env, verbose=1, tensorboard_log=logdir)
+        model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
 
     TIMESTEPS = 10000
     iters = 0
     while True:
         iters += 1
 
+        autosave_callback = SaveOnBestTrainingRewardCallback(
+            check_freq=2000, log_dir=os.path.join(logdir, str(TIMESTEPS * iters) + "_0"), verbose=1)
+
         with ProgressBarManager(TIMESTEPS) as progress_callback:
             model.learn(total_timesteps=TIMESTEPS,
                         reset_num_timesteps=False, tb_log_name=f"{last_iter+TIMESTEPS * iters}",
                         callback=[progress_callback, autosave_callback])
+
         model.save(f"{models_dir}/{last_iter+TIMESTEPS * iters}")
 
         if iters > 8:
