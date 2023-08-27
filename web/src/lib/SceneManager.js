@@ -37,6 +37,11 @@ export default class SceneManager {
 	bounce_board;
 
 	/**
+	 * @type {string}
+	 */
+	ball_uuid;
+
+	/**
 	 *
 	 * @param {ThreeScene} renderer
 	 * @param {RapierWorld} physics
@@ -228,7 +233,7 @@ export default class SceneManager {
 	}
 	/**
 	 *
-	 * @returns {string}
+	 * @returns {void}
 	 */
 	addBall() {
 		const size = 0.2;
@@ -242,34 +247,50 @@ export default class SceneManager {
 		this.item_meshes[mesh.uuid] = mesh;
 		this.item_collider[mesh.uuid] = collider;
 
-		return mesh.uuid;
+		this.ball_uuid = mesh.uuid;
 	}
 
 	/**
 	 *
-	 * @param {string} uuid
+	 *
 	 */
-	clearBall(uuid) {
+	clearBall() {
+		if (!this.ball_uuid) {
+			return;
+		}
 		// Dispose of the mesh's geometry and material
-		this.item_meshes[uuid].geometry.dispose();
+		this.item_meshes[this.ball_uuid].geometry.dispose();
 		// @ts-ignore
-		this.item_meshes[uuid].material.dispose();
+		this.item_meshes[this.ball_uuid].material.dispose();
 
 		// Remove the mesh from the scene
-		this.renderer.scene.remove(this.item_meshes[uuid]);
+		this.renderer.scene.remove(this.item_meshes[this.ball_uuid]);
 
 		// remove collider from physics world
-		this.physics.world.removeCollider(this.item_collider[uuid], false);
+		this.physics.world.removeCollider(
+			this.item_collider[this.ball_uuid],
+			false
+		);
 
 		// remove rigid body from physics world
-		this.physics.world.removeRigidBody(this.item_rigid[uuid]);
+		this.physics.world.removeRigidBody(this.item_rigid[this.ball_uuid]);
 
 		// remove from our references
-		delete this.item_meshes[uuid];
-		delete this.item_collider[uuid];
-		delete this.item_rigid[uuid];
+		delete this.item_meshes[this.ball_uuid];
+		delete this.item_collider[this.ball_uuid];
+		delete this.item_rigid[this.ball_uuid];
 
 		// this.renderer.renderer.renderLists.dispose();
+	}
+
+	/**
+	 * @description remove the ball and add a new one
+	 * @returns {void}
+	 */
+	renewBall() {
+		this.clearBall();
+
+		this.addBall();
 	}
 
 	buildScene() {
@@ -278,8 +299,6 @@ export default class SceneManager {
 		// bounce board to catch the ball
 		this.addBounceBoard();
 		// ball gets recycled when its out of the box range
-		const uuid = this.addBall();
-
-		return uuid;
+		this.renewBall();
 	}
 }

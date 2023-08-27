@@ -24,9 +24,10 @@
 	let ballUUID;
 
 	let wss;
-
+	// when call hit bounce board, reward+=1
 	let reward = 0;
-
+	// when message received from stablebaseline3, set received_action to true
+	// and send observation data back to stablebaseline3
 	let received_action = false;
 
 	const sceneWidth = document.documentElement.clientWidth;
@@ -42,7 +43,7 @@
 
 			sceneManager = new SceneManager(threeScene, physicsWorld);
 
-			ballUUID = sceneManager.buildScene();
+			sceneManager.buildScene();
 
 			window.addEventListener("keydown", (e) => {
 				sceneManager.moveBounceBoard(e.key);
@@ -110,58 +111,39 @@
 		// sync rigid body and threejs mesh
 		sceneManager.onFrameUpdate();
 
+		let done = 0;
+		// let ball_vel = { x: 0, y: 0, z: 0 };
+		// let ball_pos = { x: 0, y: 0, z: 0 };
+		// let board_pos = { x: 0, y: 0, z: 0 };
+
+		// this statement shall always be true
+		// if (sceneManager.item_rigid[ballUUID]) {
+
+		// when ball hit the bounce board, update reward
+		physicsWorld.ballHitBoard(onBallHitBounceBoard);
+
+		const ball_pos = physicsWorld.getBallPosition();
+
+		if (
+			// @ts-ignore
+			ball_pos.z > 0
+		) {
+			// reset env
+			//  ball is out of box, clear its mesh and rigid body
+			sceneManager.renewBall();
+
+			reward = 0;
+
+			done = 1;
+		}
+		// }
+
 		if (received_action) {
-			let done = 0;
-			let ball_vel = { x: 0, y: 0, z: 0 };
-			let ball_pos = { x: 0, y: 0, z: 0 };
-			let board_pos = { x: 0, y: 0, z: 0 };
-
-			if (sceneManager.item_rigid[ballUUID]) {
-				// when ball hit the bounce board, update reward
-				physicsWorld.ballHitBoard(onBallHitBounceBoard);
-
-				// todo, send the Observation to stablebaseline3
-				// console.log(
-				// 	reward,
-				// 	physicsWorld.getBallVelocity(),
-				// 	physicsWorld.getBallPosition(),
-				// 	physicsWorld.getBounceBoardPosition()
-				// );
-
-				ball_vel = physicsWorld.getBallVelocity();
-				ball_pos = physicsWorld.getBallPosition();
-				board_pos = physicsWorld.getBounceBoardPosition();
-
-				if (
-					// @ts-ignore
-					sceneManager.item_rigid[ballUUID].translation().z > 6
-				) {
-					// reset env
-					//  ball is out of box, clear its mesh and rigid body
-					sceneManager.clearBall(ballUUID);
-
-					ballUUID = sceneManager.addBall();
-
-					reward = 0;
-
-					done = 1;
-				}
-			}
-
-			// send observations
+			assembleObservation();
+			// send the Observation to stablebaseline3 env
 			wss.send(
 				JSON.stringify({
-					observation: [
-						ball_vel.x,
-						ball_vel.y,
-						ball_vel.z,
-						ball_pos.x,
-						ball_pos.y,
-						ball_pos.z,
-						board_pos.x,
-						board_pos.y,
-						board_pos.z,
-					],
+					observation: assembleObservation(),
 					reward: reward,
 					done: done,
 				})
@@ -171,6 +153,32 @@
 		}
 
 		animationPointer = requestAnimationFrame(animate);
+	}
+
+	function assembleObservation() {
+		let ball_vel = physicsWorld.getBallVelocity();
+		let ball_pos = physicsWorld.getBallPosition();
+		let board_pos = physicsWorld.getBounceBoardPosition();
+
+		ball_vel = new Vector3(ball_vel.x, ball_vel.y, ball_vel.z).normalize();
+		ball_pos = new Vector3(ball_pos.x, ball_pos.y, ball_pos.z).normalize();
+		board_pos = new Vector3(
+			board_pos.x,
+			board_pos.y,
+			board_pos.z
+		).normalize();
+
+		return [
+			ball_vel.x,
+			ball_vel.y,
+			ball_vel.z,
+			ball_pos.x,
+			ball_pos.y,
+			ball_pos.z,
+			board_pos.x,
+			board_pos.y,
+			board_pos.z,
+		];
 	}
 </script>
 
