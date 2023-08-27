@@ -34,6 +34,10 @@ class ObservationDict(TypedDict):
     ball_velocity: ArrayLike
 
 
+ws = websocket.WebSocket()
+ws.connect("ws://127.0.0.1:5174", timeout=5)
+
+
 class BounceEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
@@ -58,11 +62,10 @@ class BounceEnv(gym.Env):
             'board_position': board_pos_space,
         })
 
-        self.ws = websocket.WebSocket()
-        self.ws.connect("ws://127.0.0.1:5174", timeout=5)
+        print("__init__ called")
 
     def __del__(self):
-        self.ws.close()
+        print("__del__ called")
 
     def step(self, action):
 
@@ -70,16 +73,16 @@ class BounceEnv(gym.Env):
 
         # send action to the game
         if action == 0:
-            self.ws.send("s")
+            ws.send("s")
         elif action == 1:
-            self.ws.send("a")
+            ws.send("a")
         elif action == 2:
-            self.ws.send("d")
+            ws.send("d")
         elif action == 3:
-            self.ws.send("w")
+            ws.send("w")
 
         try:
-            msg = self.ws.recv()
+            msg = ws.recv()
         except websocket.WebSocketTimeoutException:
             print("Timeout occurred")
             return self.observation, self.reward, False, False, {}
@@ -103,6 +106,8 @@ class BounceEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
+
+        print("reset called")
 
         self.observation: ObservationDict = {"ball_velocity": np.array([0, 0, 0], dtype=np.float32),
                                              "ball_position": np.array([0, 0, 0], dtype=np.float32),
@@ -161,8 +166,10 @@ def train_agent():
 
 if __name__ == "__main__":
 
-    env = BounceEnv()
+    # env = BounceEnv()
 
-    check_env(env)
+    # check_env(env)
 
     train_agent()
+
+    ws.close()
