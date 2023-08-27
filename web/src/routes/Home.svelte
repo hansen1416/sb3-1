@@ -62,8 +62,15 @@
 
 			// handle the message event
 			wss.addEventListener("message", function (event) {
-				// console.log("WebSocket message received:", event.data);
-				sceneManager.moveBounceBoard(event.data);
+				// the action could be "a", "d", "w", "s" or do nothing
+				if (
+					event.data === "a" ||
+					event.data === "d" ||
+					event.data === "w" ||
+					event.data === "s"
+				) {
+					sceneManager.moveBounceBoard(event.data);
+				}
 
 				received_action = true;
 			});
@@ -177,7 +184,7 @@
 			ball_pos.z,
 			board_pos.x,
 			board_pos.y,
-			board_pos.z,
+			// board_pos.z,
 		];
 	}
 </script>

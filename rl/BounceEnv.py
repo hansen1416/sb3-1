@@ -1,19 +1,16 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-import cv2
-import random
-import time
-from collections import deque
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import PPO
-from stable_baselines3.common.evaluation import evaluate_policy
 import os
 from pathlib import Path
 from typing import TypedDict
 from numpy.typing import ArrayLike
 import websocket
 import json
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.results_plotter import load_results, ts2xy
 
 """
 game env is a 3D game, the ball is bouncing in a 3D cuboid with one side be empty, the board is trying to catch the ball
@@ -34,6 +31,64 @@ class ObservationDict(TypedDict):
     ball_velocity: ArrayLike
 
 
+class SaveOnBestTrainingRewardCallback(BaseCallback):
+    """
+    Callback for saving a model (the check is done every ``check_freq`` steps)
+    based on the training reward (in practice, we recommend using ``EvalCallback``).
+
+    :param check_freq: (int)
+    :param log_dir: (str) Path to the folder where the model will be saved.
+      It must contains the file created by the ``Monitor`` wrapper.
+    :param verbose: (int)
+    """
+
+    def __init__(self, check_freq, log_dir, verbose=1):
+        super().__init__(verbose)
+        self.check_freq = check_freq
+        self.log_dir = log_dir
+        self.save_path = os.path.join(log_dir, "best_model")
+        self.best_mean_reward = -np.inf
+
+    def _init_callback(self) -> None:
+        # Create folder if needed
+        if self.save_path is not None:
+            os.makedirs(self.save_path, exist_ok=True)
+
+    def _on_step(self) -> bool:
+
+        if self.n_calls % self.check_freq == 0:
+
+            # Retrieve training reward
+            x, y = ts2xy(load_results(self.log_dir), "timesteps")
+            if len(x) > 0:
+                # Mean training reward over the last 100 episodes
+                mean_reward = np.mean(y[-100:])
+                if self.verbose > 0:
+                    print("Num timesteps: {}".format(self.num_timesteps))
+                    print(
+                        "Best mean reward: {:.2f} - Last mean reward per episode: {:.2f}".format(
+                            self.best_mean_reward, mean_reward
+                        )
+                    )
+
+                # New best model, you could save the agent here
+                if mean_reward > self.best_mean_reward:
+                    self.best_mean_reward = mean_reward
+                    # Example for saving best model
+                    if self.verbose > 0:
+                        print(
+                            "Saving new best model at {} timesteps".format(x[-1]))
+                        print("Saving new best model to {}.zip".format(
+                            self.save_path))
+                    self.model.save(self.save_path)
+
+        return True
+
+
+models_dir = os.path.join('models', 'bounce-ppo')
+logdir = os.path.join('logs', 'bounce-ppo')
+
+
 ws = websocket.WebSocket()
 ws.connect("ws://127.0.0.1:5174", timeout=5)
 
@@ -48,19 +103,21 @@ class BounceEnv(gym.Env):
         # They must be gym.spaces objects
         # Example when using discrete actions:
         # self.action_space = spaces.Discrete(N_DISCRETE_ACTIONS)
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(5)
 
-        ball_pos_space = spaces.Box(
-            low=-1, high=1, shape=(3,), dtype=np.float32)
-        board_pos_space = spaces.Box(
-            low=-1, high=1, shape=(3,), dtype=np.float32)
-        ball_vel_space = spaces.Box(
-            low=-1, high=1, shape=(3,), dtype=np.float32)
-        self.observation_space = spaces.Dict({
-            'ball_velocity': ball_vel_space,
-            'ball_position': ball_pos_space,
-            'board_position': board_pos_space,
-        })
+        # ball_pos_space = spaces.Box(
+        #     low=-1, high=1, shape=(3,), dtype=np.float32)
+        # board_pos_space = spaces.Box(
+        #     low=-1, high=1, shape=(3,), dtype=np.float32)
+        # ball_vel_space = spaces.Box(
+        #     low=-1, high=1, shape=(3,), dtype=np.float32)
+        # # self.observation_space = spaces.Dict({
+        #     'ball_velocity': ball_vel_space,
+        #     'ball_position': ball_pos_space,
+        #     'board_position': board_pos_space,
+        # })
+        self.observation_space = spaces.Box(
+            low=-1.0, high=1.0, shape=(8,), dtype=float)
 
         print("__init__ called")
 
@@ -69,16 +126,16 @@ class BounceEnv(gym.Env):
 
     def step(self, action):
 
-        # self.prev_actions.append(action)
-
         # send action to the game
         if action == 0:
-            ws.send("s")
+            ws.send('')
         elif action == 1:
-            ws.send("a")
+            ws.send("s")
         elif action == 2:
-            ws.send("d")
+            ws.send("a")
         elif action == 3:
+            ws.send("d")
+        elif action == 4:
             ws.send("w")
 
         try:
@@ -94,11 +151,12 @@ class BounceEnv(gym.Env):
             print(msg)
             return self.observation, self.reward, False, False, {}
 
-        msg_obs = msg['observation']
+        # self.observation: ObservationDict = {"ball_position": np.array([msg_obs[0], msg_obs[1], msg_obs[2]], dtype=np.float32),
+        #                                      "board_position": np.array([msg_obs[3], msg_obs[4], msg_obs[5]], dtype=np.float32),
+        #                                      "ball_velocity": np.array([msg_obs[6], msg_obs[7], msg_obs[8]], dtype=np.float32)}
 
-        self.observation: ObservationDict = {"ball_position": np.array([msg_obs[0], msg_obs[1], msg_obs[2]], dtype=np.float32),
-                                             "board_position": np.array([msg_obs[3], msg_obs[4], msg_obs[5]], dtype=np.float32),
-                                             "ball_velocity": np.array([msg_obs[6], msg_obs[7], msg_obs[8]], dtype=np.float32)}
+        self.observation = np.array(msg['observation'], dtype=np.float32)
+
         self.reward = msg['reward']
         info = {}
 
@@ -107,11 +165,12 @@ class BounceEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
-        print("reset called")
+        # self.observation: ObservationDict = {"ball_velocity": np.array([0, 0, 0], dtype=np.float32),
+        #                                      "ball_position": np.array([0, 0, 0], dtype=np.float32),
+        #                                      "board_position": np.array([0, 0, 0], dtype=np.float32)}
 
-        self.observation: ObservationDict = {"ball_velocity": np.array([0, 0, 0], dtype=np.float32),
-                                             "ball_position": np.array([0, 0, 0], dtype=np.float32),
-                                             "board_position": np.array([0, 0, 0], dtype=np.float32)}
+        self.observation = np.array([0, 0, 0, 0, 0, 0, 0, 0], dtype=np.float32)
+
         # Implement reset method
         info = {}
         return self.observation, info
@@ -119,14 +178,14 @@ class BounceEnv(gym.Env):
 
 def train_agent():
 
-    models_dir = os.path.join('models', 'bounce-ppo')
-    logdir = os.path.join('logs', 'bounce-ppo')
-
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
 
     if not os.path.exists(logdir):
         os.makedirs(logdir)
+
+    autosave_callback = SaveOnBestTrainingRewardCallback(
+        check_freq=2000, log_dir=logdir, verbose=1)
 
     paths = sorted(Path(models_dir).iterdir(), key=os.path.getmtime)
 
@@ -157,7 +216,8 @@ def train_agent():
     while True:
         iters += 1
         model.learn(total_timesteps=TIMESTEPS,
-                    reset_num_timesteps=False, tb_log_name=f"{last_iter+TIMESTEPS * iters}")
+                    reset_num_timesteps=False, tb_log_name=f"{last_iter+TIMESTEPS * iters}",
+                    callback=[autosave_callback])
         model.save(f"{models_dir}/{last_iter+TIMESTEPS * iters}")
 
         if iters > 8:
@@ -170,6 +230,6 @@ if __name__ == "__main__":
 
     # check_env(env)
 
-    train_agent()
+    # train_agent()
 
     ws.close()
