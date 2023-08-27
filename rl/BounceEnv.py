@@ -248,13 +248,13 @@ def train_agent():
     while True:
         iters += 1
 
-        autosave_callback = SaveOnBestTrainingRewardCallback(
-            check_freq=2000, log_dir=os.path.join(logdir, str(TIMESTEPS * iters) + "_0"), verbose=1)
+        # autosave_callback = SaveOnBestTrainingRewardCallback(
+        #     check_freq=2000, log_dir=os.path.join(logdir, str(TIMESTEPS * iters) + "_0"), verbose=1)
 
         with ProgressBarManager(TIMESTEPS) as progress_callback:
             model.learn(total_timesteps=TIMESTEPS,
                         reset_num_timesteps=False, tb_log_name=f"{last_iter+TIMESTEPS * iters}",
-                        callback=[progress_callback, autosave_callback])
+                        callback=[progress_callback])
 
         model.save(f"{models_dir}/{last_iter+TIMESTEPS * iters}")
 
