@@ -153,6 +153,8 @@ class BounceEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-1.0, high=1.0, shape=(8,), dtype=float)
 
+        self.reward = 0
+
         print("__init__ called")
 
     def __del__(self):
@@ -204,6 +206,8 @@ class BounceEnv(gym.Env):
         #                                      "board_position": np.array([0, 0, 0], dtype=np.float32)}
 
         self.observation = np.array([0, 0, 0, 0, 0, 0, 0, 0], dtype=np.float32)
+
+        self.reward = 0
 
         # Implement reset method
         info = {}
@@ -262,12 +266,36 @@ def train_agent():
             break
 
 
+def test_agent():
+
+    env = BounceEnv()
+    env.reset()
+
+    model = PPO.load("models/bounce-ppo/90000.zip")
+
+    # print(model)
+
+    obs, _ = env.reset()
+
+    # print(obs)
+    while True:
+        action, _ = model.predict(obs)
+        obs, rewards, dones, truncate, info = env.step(action)
+
+        print(obs)
+        # print(_states)
+        # print(rewards)
+        # env.render()
+
+
 if __name__ == "__main__":
 
     # env = BounceEnv()
 
     # check_env(env)
 
-    train_agent()
+    # train_agent()
+
+    test_agent()
 
     ws.close()

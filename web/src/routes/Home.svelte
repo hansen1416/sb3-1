@@ -194,6 +194,7 @@
 
 	<div class="controls">
 		<div>
+			<span class="score">{reward}</span>
 			<button
 				on:click={() => {
 					threeScene.resetControl();
@@ -212,6 +213,11 @@
 		position: absolute;
 		bottom: 10px;
 		right: 10px;
+	}
+
+	.controls .score {
+		color: azure;
+		font-size: 30px;
 	}
 
 	.controls button {
