@@ -55,7 +55,7 @@ def train_agent(ws):
 
         model.save(f"{models_dir}/{last_iter+TIMESTEPS * iters}")
 
-        if iters > 8:
+        if iters > 3:
             break
 
 

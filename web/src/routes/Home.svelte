@@ -21,11 +21,12 @@
 		wssReady = false,
 		animationPointer;
 
-	let ballUUID;
-
 	let wss;
 	// when call hit bounce board, reward+=1
 	let reward = 0;
+	let dropout = 0;
+
+	let reset_threshold = 20;
 	// when message received from stablebaseline3, set received_action to true
 	// and send observation data back to stablebaseline3
 	let received_action = false;
@@ -97,12 +98,6 @@
 		}
 	});
 
-	function onBallHitBounceBoard() {
-		// console.log("onBallHitBounceBoard");
-		// todo, send the Observation to stablebaseline3
-		reward += 1;
-	}
-
 	// when mannequin, model and camera are erady, start animation loop
 	$: if (assetReady && wssReady) {
 		animate();
@@ -127,7 +122,9 @@
 		// if (sceneManager.item_rigid[ballUUID]) {
 
 		// when ball hit the bounce board, update reward
-		physicsWorld.ballHitBoard(onBallHitBounceBoard);
+		physicsWorld.ballHitBoard(() => {
+			reward += 1;
+		});
 
 		const ball_pos = physicsWorld.getBallPosition();
 
@@ -139,11 +136,19 @@
 			//  ball is out of box, clear its mesh and rigid body
 			sceneManager.renewBall();
 
-			reward = 0;
-
-			done = 1;
+			dropout += 1;
 		}
 		// }
+
+		if (dropout > reset_threshold) {
+			
+			// ball is out of box, clear its mesh and rigid body
+			dropout = 0;
+
+			reward = 0;
+			// reset env
+			done = 1;
+		}
 
 		if (received_action) {
 			assembleObservation();

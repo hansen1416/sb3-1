@@ -140,7 +140,7 @@ export default class RapierWorld {
 	 */
 	createBall(size, pos) {
 		// this is the initial speed magnitude
-		const speed = 30;
+		const speed = 20;
 		const velocity = randomVecWithinAngelDistance().multiplyScalar(speed);
 
 		// @ts-ignore
