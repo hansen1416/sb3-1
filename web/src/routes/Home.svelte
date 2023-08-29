@@ -220,6 +220,7 @@
 
 	<div class="controls">
 		<div>
+			<span class="score">{roundToTwo(bonus_reward)}</span>
 			<span class="score">{reward}</span>
 			<button
 				on:click={() => {
@@ -244,6 +245,7 @@
 	.controls .score {
 		color: azure;
 		font-size: 30px;
+		margin-right: 8px;
 	}
 
 	.controls button {
