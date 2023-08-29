@@ -70,6 +70,10 @@
 					event.data === "w" ||
 					event.data === "s"
 				) {
+
+					// make move punishable
+					reward -= 0.01;
+
 					sceneManager.moveBounceBoard(event.data);
 				}
 
@@ -123,7 +127,8 @@
 
 		// when ball hit the bounce board, update reward
 		physicsWorld.ballHitBoard(() => {
-			reward += 1;
+			// when board catch the ball, reward up, make it bigger to see if it learn better
+			reward += 3;
 		});
 
 		const ball_pos = physicsWorld.getBallPosition();
@@ -137,18 +142,27 @@
 			sceneManager.renewBall();
 
 			dropout += 1;
+			// when board catch the ball, reward down
+			reward -= 1;
 		}
 		// }
 
 		if (dropout > reset_threshold) {
-			
 			// ball is out of box, clear its mesh and rigid body
 			dropout = 0;
 
 			reward = 0;
 			// reset env
 			done = 1;
+
+			sceneManager.resetBounceBoard();
 		}
+
+		let bonus_reward = 0;
+
+		const board_pos = physicsWorld.getBounceBoardPosition();
+
+		bonus_reward = Math.max(0, 15 - Math.sqrt((ball_pos.x - board_pos.x)**2 + (ball_pos.y - board_pos.y)**2)) / 10;
 
 		if (received_action) {
 			assembleObservation();
@@ -156,7 +170,7 @@
 			wss.send(
 				JSON.stringify({
 					observation: assembleObservation(),
-					reward: reward,
+					reward: reward + bonus_reward,
 					done: done,
 				})
 			);

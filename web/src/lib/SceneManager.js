@@ -231,6 +231,14 @@ export default class SceneManager {
 
 		this.bounce_board.setTranslation(t, true);
 	}
+
+	/**
+	 * @description reset the bounce board to the center
+	 */
+	resetBounceBoard() {
+		this.bounce_board.setTranslation({ x: 0, y: 0, z: 0 }, true);
+	}
+
 	/**
 	 *
 	 * @returns {void}

@@ -129,7 +129,7 @@ class BounceEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
-        print("reset called")
+        # print("reset called")
 
         # self.observation: ObservationDict = {"ball_velocity": np.array([0, 0, 0], dtype=np.float32),
         #                                      "ball_position": np.array([0, 0, 0], dtype=np.float32),
