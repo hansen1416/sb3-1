@@ -73,7 +73,7 @@
 					event.data === "s"
 				) {
 					// make move punishable
-					reward -= 0.01;
+					// reward -= 0.01;
 
 					sceneManager.moveBounceBoard(event.data);
 				}
@@ -221,7 +221,7 @@
 	<div class="controls">
 		<div>
 			<span class="score">{roundToTwo(bonus_reward)}</span>
-			<span class="score">{reward}</span>
+			<span class="score">{roundToTwo(reward)}</span>
 			<button
 				on:click={() => {
 					threeScene.resetControl();
