@@ -4,6 +4,7 @@
 	// @ts-ignore
 	// import { cloneDeep } from "lodash";
 
+	import { roundToTwo } from "../utils/ropes";
 	import ThreeScene from "../lib/ThreeScene";
 	import RapierWorld from "../lib/RapierWorld";
 	import SceneManager from "../lib/SceneManager";
@@ -25,6 +26,7 @@
 	// when call hit bounce board, reward+=1
 	let reward = 0;
 	let dropout = 0;
+	let bonus_reward = 0;
 
 	let reset_threshold = 20;
 	// when message received from stablebaseline3, set received_action to true
@@ -70,7 +72,6 @@
 					event.data === "w" ||
 					event.data === "s"
 				) {
-
 					// make move punishable
 					reward -= 0.01;
 
@@ -158,11 +159,17 @@
 			sceneManager.resetBounceBoard();
 		}
 
-		let bonus_reward = 0;
-
 		const board_pos = physicsWorld.getBounceBoardPosition();
 
-		bonus_reward = Math.max(0, 15 - Math.sqrt((ball_pos.x - board_pos.x)**2 + (ball_pos.y - board_pos.y)**2)) / 10;
+		bonus_reward =
+			Math.max(
+				0,
+				15 -
+					Math.sqrt(
+						(ball_pos.x - board_pos.x) ** 2 +
+							(ball_pos.y - board_pos.y) ** 2
+					)
+			) / 10;
 
 		if (received_action) {
 			assembleObservation();
