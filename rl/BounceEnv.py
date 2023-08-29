@@ -2,15 +2,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3 import PPO
-import os
-from pathlib import Path
-from typing import TypedDict
-from numpy.typing import ArrayLike
 import websocket
 import json
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.results_plotter import load_results, ts2xy
 from tqdm.auto import tqdm
 
 """
@@ -24,66 +18,6 @@ when the board catches the ball, the reward is 1
 when the ball is bounced out of the cuboid, the reward is -1
 
 """
-
-
-class ObservationDict(TypedDict):
-    ball_position: ArrayLike
-    board_position: ArrayLike
-    ball_velocity: ArrayLike
-
-
-class SaveOnBestTrainingRewardCallback(BaseCallback):
-    """
-    Callback for saving a model (the check is done every ``check_freq`` steps)
-    based on the training reward (in practice, we recommend using ``EvalCallback``).
-
-    :param check_freq: (int)
-    :param log_dir: (str) Path to the folder where the model will be saved.
-      It must contains the file created by the ``Monitor`` wrapper.
-    :param verbose: (int)
-    """
-
-    def __init__(self, check_freq, log_dir, verbose=1):
-        super().__init__(verbose)
-        self.check_freq = check_freq
-        self.log_dir = log_dir
-        self.save_path = os.path.join(log_dir, "best_model")
-        self.best_mean_reward = -np.inf
-
-    def _init_callback(self) -> None:
-        # Create folder if needed
-        if self.save_path is not None:
-            os.makedirs(self.save_path, exist_ok=True)
-
-    def _on_step(self) -> bool:
-
-        if self.n_calls % self.check_freq == 0:
-
-            # Retrieve training reward
-            x, y = ts2xy(load_results(self.log_dir), "timesteps")
-            if len(x) > 0:
-                # Mean training reward over the last 100 episodes
-                mean_reward = np.mean(y[-100:])
-                if self.verbose > 0:
-                    print("Num timesteps: {}".format(self.num_timesteps))
-                    print(
-                        "Best mean reward: {:.2f} - Last mean reward per episode: {:.2f}".format(
-                            self.best_mean_reward, mean_reward
-                        )
-                    )
-
-                # New best model, you could save the agent here
-                if mean_reward > self.best_mean_reward:
-                    self.best_mean_reward = mean_reward
-                    # Example for saving best model
-                    if self.verbose > 0:
-                        print(
-                            "Saving new best model at {} timesteps".format(x[-1]))
-                        print("Saving new best model to {}.zip".format(
-                            self.save_path))
-                    self.model.save(self.save_path)
-
-        return True
 
 
 class ProgressBarCallback(BaseCallback):
@@ -119,18 +53,10 @@ class ProgressBarManager(object):
         self.pbar.close()
 
 
-models_dir = os.path.join('models', 'bounce-ppo')
-logdir = os.path.join('logs', 'bounce-ppo')
-
-
-ws = websocket.WebSocket()
-ws.connect("ws://127.0.0.1:5174", timeout=5)
-
-
 class BounceEnv(gym.Env):
     """Custom Environment that follows gym interface"""
 
-    def __init__(self):
+    def __init__(self, ws_connection=None):
 
         super(BounceEnv, self).__init__()
         # Define action and observation space
@@ -155,6 +81,8 @@ class BounceEnv(gym.Env):
 
         self.reward = 0
 
+        self.ws_connection = ws_connection
+
         print("__init__ called")
 
     def __del__(self):
@@ -164,18 +92,18 @@ class BounceEnv(gym.Env):
 
         # send action to the game
         if action == 0:
-            ws.send('')
+            self.ws_connection.send('')
         elif action == 1:
-            ws.send("s")
+            self.ws_connection.send("s")
         elif action == 2:
-            ws.send("a")
+            self.ws_connection.send("a")
         elif action == 3:
-            ws.send("d")
+            self.ws_connection.send("d")
         elif action == 4:
-            ws.send("w")
+            self.ws_connection.send("w")
 
         try:
-            msg = ws.recv()
+            msg = self.ws_connection.recv()
         except websocket.WebSocketTimeoutException:
             print("Timeout occurred")
             return self.observation, self.reward, False, False, {}
@@ -214,88 +142,13 @@ class BounceEnv(gym.Env):
         return self.observation, info
 
 
-def train_agent():
-
-    if not os.path.exists(models_dir):
-        os.makedirs(models_dir)
-
-    if not os.path.exists(logdir):
-        os.makedirs(logdir)
-
-    paths = sorted(Path(models_dir).iterdir(), key=os.path.getmtime)
-
-    last_model = None
-    last_iter = 0
-
-    env = BounceEnv()
-    env.reset()
-
-    if len(paths) > 0:
-        # get last model file
-        last_model = paths[-1]
-
-        # get last iteration
-        last_iter = int(os.path.splitext(last_model.name)[0])
-
-        last_model = PPO.load(last_model, env, verbose=1,
-                              tensorboard_log=logdir)
-
-    if last_model:
-        model = last_model
-    else:
-
-        # model = PPO('MultiInputPolicy', env, verbose=1, tensorboard_log=logdir)
-        model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=logdir)
-
-    TIMESTEPS = 10000
-    iters = 0
-    while True:
-        iters += 1
-
-        # autosave_callback = SaveOnBestTrainingRewardCallback(
-        #     check_freq=2000, log_dir=os.path.join(logdir, str(TIMESTEPS * iters) + "_0"), verbose=1)
-
-        with ProgressBarManager(TIMESTEPS) as progress_callback:
-            model.learn(total_timesteps=TIMESTEPS,
-                        reset_num_timesteps=False, tb_log_name=f"{last_iter+TIMESTEPS * iters}",
-                        callback=[progress_callback])
-
-        model.save(f"{models_dir}/{last_iter+TIMESTEPS * iters}")
-
-        if iters > 8:
-            break
-
-
-def test_agent():
-
-    env = BounceEnv()
-    env.reset()
-
-    model = PPO.load("models/bounce-ppo/90000.zip")
-
-    # print(model)
-
-    obs, _ = env.reset()
-
-    # print(obs)
-    while True:
-        action, _ = model.predict(obs)
-        obs, rewards, dones, truncate, info = env.step(action)
-
-        print(obs)
-        # print(_states)
-        # print(rewards)
-        # env.render()
-
-
 if __name__ == "__main__":
 
-    # env = BounceEnv()
+    ws = websocket.WebSocket()
+    ws.connect("ws://127.0.0.1:5174", timeout=5)
 
-    # check_env(env)
+    env = BounceEnv(ws_connection=ws)
 
-    # train_agent()
-
-    test_agent()
+    check_env(env)
 
     ws.close()
