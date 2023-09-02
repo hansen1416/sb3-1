@@ -1,8 +1,11 @@
 use bouncer::create_board;
+use rapier3d::prelude::*;
+use rapier3d::na::{ Vector3 };
 
 fn main() {
+    let position: Vector3<f32> = vector![0.0, 1.0, 0.0];
 
-    create_board();
+    create_board(position);
 
     println!("{}", "main finished");
 }

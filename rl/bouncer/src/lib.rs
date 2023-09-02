@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use rapier3d::prelude::*;
+use rapier3d::na::{ Vector3 };
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -7,15 +8,12 @@ pub fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
     Ok((a + b).to_string())
 }
 
-pub fn create_board()  {
-    // let position = vector![0.0, -9.81, 0.0];
-    // let rotation = UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0);
+pub fn create_board(position: Vector3<f32>) {
+    let mut bodies = RigidBodySet::new();
 
-    let _rb_desc = RigidBodyBuilder::fixed()
-        .translation(vector![0.0, 10.0, 0.0]);
-        // .rotation(rotation);
-
-
+    let rb_desc = RigidBodyBuilder::fixed().translation(position);
+    // .rotation(rotation);
+    let _handle = bodies.insert(rb_desc);
 }
 
 #[pyfunction]
