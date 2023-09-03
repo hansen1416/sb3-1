@@ -104,14 +104,12 @@ export default class RapierWorld {
 	/**
 	 * create a rigid body with a collider, of shape plane
 	 *
-	 * @param {Float32Array} vertices
-	 * @param {number[]} indices
+	 * @param {number} size
 	 * @param {vec3} position
 	 * @returns
 	 */
 	createBoard(
-		vertices,
-		indices,
+		size,
 		position = { x: 0, y: 0, z: 0 },
 		rotation = { x: 0, y: 0, z: 0, w: 0 }
 	) {
@@ -123,7 +121,7 @@ export default class RapierWorld {
 		const rigid = this.world.createRigidBody(rbDesc);
 
 		// @ts-ignore
-		const clDesc = this.ColliderDesc.trimesh(vertices, indices)
+		const clDesc = this.ColliderDesc.cuboid(size / 2, size / 2, 0.01)
 			.setFriction(this.friction)
 			.setRestitution(this.restitution);
 

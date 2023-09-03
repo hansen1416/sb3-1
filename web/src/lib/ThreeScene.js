@@ -117,27 +117,19 @@ export default class ThreeScene {
 	/**
 	 * create a plane buffer geometry
 	 *
-	 * @param {Float32Array} vertices
-	 * @param {number[]} indices
+	 * @param {number} size
 	 * @param {Vector3} position
 	 * @param {THREE.Quaternion} rotation
 	 * @param {number} color
 	 * @returns
 	 */
 	createBoard(
-		vertices,
-		indices,
+		size,
 		position = new Vector3(0, 0, 0),
 		rotation = new THREE.Quaternion(),
 		color = 0xff0000
 	) {
-		const geometry = new THREE.BufferGeometry();
-
-		geometry.setIndex(indices);
-		geometry.setAttribute(
-			"position",
-			new THREE.BufferAttribute(vertices, 3)
-		);
+		const geometry = new THREE.BoxGeometry(size, size, 0.01);
 
 		const material = new THREE.MeshBasicMaterial({
 			color: color,

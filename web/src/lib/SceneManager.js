@@ -100,7 +100,7 @@ export default class SceneManager {
 		this.addBoxSide(
 			new Vector3(this.box_size / 2, 0, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(
-				new Vector3(0, 0, 1),
+				new Vector3(0, 1, 0),
 				Math.PI / 2
 			),
 			color
@@ -109,10 +109,7 @@ export default class SceneManager {
 		// back
 		this.addBoxSide(
 			new Vector3(0, 0, -this.box_size),
-			new Quaternion().setFromAxisAngle(
-				new Vector3(1, 0, 0),
-				Math.PI / 2
-			),
+			new Quaternion(),
 			color
 		);
 
@@ -120,7 +117,7 @@ export default class SceneManager {
 		this.addBoxSide(
 			new Vector3(this.box_size / -2, 0, this.box_size / -2),
 			new Quaternion().setFromAxisAngle(
-				new Vector3(0, 0, 1),
+				new Vector3(0, 1, 0),
 				-Math.PI / 2
 			),
 			color
@@ -129,14 +126,20 @@ export default class SceneManager {
 		// top
 		this.addBoxSide(
 			new Vector3(0, this.box_size / 2, this.box_size / -2),
-			new Quaternion(),
+			new Quaternion().setFromAxisAngle(
+				new Vector3(1, 0, 0),
+				-Math.PI / 2
+			),
 			color
 		);
 
 		// bottom
 		this.addBoxSide(
 			new Vector3(0, this.box_size / -2, this.box_size / -2),
-			new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI),
+			new Quaternion().setFromAxisAngle(
+				new Vector3(1, 0, 0),
+				Math.PI / 2
+			),
 			color
 		);
 	}
@@ -149,38 +152,15 @@ export default class SceneManager {
 	 * @param {number} color
 	 */
 	addBoxSide(position, rotation = new THREE.Quaternion(), color = 0xff0000) {
-		const a = new Vector3(this.box_size / -2, 0, this.box_size / -2);
-		const b = new Vector3(this.box_size / -2, 0, this.box_size / 2);
-		const c = new Vector3(this.box_size / 2, 0, this.box_size / -2);
-		const d = new Vector3(this.box_size / 2, 0, this.box_size / 2);
-
-		const vertices = new Float32Array([
-			a.x,
-			a.y,
-			a.z,
-			b.x,
-			b.y,
-			b.z,
-			c.x,
-			c.y,
-			c.z,
-			d.x,
-			d.y,
-			d.z,
-		]);
-		const indices = [0, 1, 2, 2, 3, 1];
-
 		const mesh = this.renderer.createBoard(
-			vertices,
-			indices,
+			this.box_size,
 			position,
 			rotation,
 			color
 		);
 
 		const rigid = this.physics.createBoard(
-			vertices,
-			indices,
+			this.box_size,
 			position,
 			rotation
 		);
