@@ -9,11 +9,24 @@ pub fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 }
 
 pub fn create_board(position: Vector3<f32>) {
-    let mut bodies = RigidBodySet::new();
+    // The set that will contain our rigid-bodies.
+    let mut rigid_body_set = RigidBodySet::new();
+    let mut collider_set = ColliderSet::new();
 
-    let rb_desc = RigidBodyBuilder::fixed().translation(position);
+    let rigid_body = RigidBodyBuilder::fixed()
+        .translation(position)
+        .rotation(vector![0.0, 0.0, 5.0])
+        // All done, actually build the rigid-body.
+        .build();
     // .rotation(rotation);
-    let _handle = bodies.insert(rb_desc);
+    let rigid_body_handle = rigid_body_set.insert(rigid_body);
+
+    // The default density is 1.0, we are setting 2.0 for this example.
+    let collider = ColliderBuilder::ball(1.0).density(2.0).build();
+
+    // When the collider is attached, the rigid-body's mass and angular
+    // inertia is automatically updated to take the collider into account.
+    collider_set.insert_with_parent(collider, rigid_body_handle, &mut rigid_body_set);
 }
 
 #[pyfunction]
