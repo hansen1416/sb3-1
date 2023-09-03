@@ -54,7 +54,7 @@
 
 			// create a new WebSocket object
 			wss = new WebSocket(
-				"ws://" + import.meta.env.VITE_WS_HOST + ":5174"
+				"ws://" + import.meta.env.VITE_WS_HOST + ":" + import.meta.env.VITE_WS_PORT
 			);
 
 			// handle the open event
