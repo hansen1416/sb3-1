@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
 use rapier3d::prelude::*;
 use rapier3d::na::{ Vector3 };
+use crate::nalgebra::UnitQuaternion;
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -8,25 +9,37 @@ pub fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
     Ok((a + b).to_string())
 }
 
-pub fn create_board(position: Vector3<f32>) {
+pub fn create_board(position: Vector3<f32>, rotation: Vector3<f32>) {
+    let friction: f32 = 0.0;
+    let restitution: f32 = 1.0;
+
     // The set that will contain our rigid-bodies.
     let mut rigid_body_set = RigidBodySet::new();
     let mut collider_set = ColliderSet::new();
 
+    let quaternion = UnitQuaternion::from_euler_angles(rotation.x, rotation.y, rotation.z);
+
     let rigid_body = RigidBodyBuilder::fixed()
         .translation(position)
-        .rotation(vector![0.0, 0.0, 5.0])
+        .rotation(quaternion.into())
         // All done, actually build the rigid-body.
         .build();
     // .rotation(rotation);
     let rigid_body_handle = rigid_body_set.insert(rigid_body);
 
     // The default density is 1.0, we are setting 2.0 for this example.
-    let collider = ColliderBuilder::ball(1.0).density(2.0).build();
+    let collider = ColliderBuilder::cuboid(5.0, 5.0, 0.01)
+        .friction(friction)
+        .restitution(restitution)
+        .build();
 
     // When the collider is attached, the rigid-body's mass and angular
     // inertia is automatically updated to take the collider into account.
-    collider_set.insert_with_parent(collider, rigid_body_handle, &mut rigid_body_set);
+    let _collider_handle = collider_set.insert_with_parent(
+        collider,
+        rigid_body_handle,
+        &mut rigid_body_set
+    );
 }
 
 #[pyfunction]
