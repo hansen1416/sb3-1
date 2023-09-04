@@ -75,10 +75,12 @@ impl BouncerGame {
         let physics_pipeline = PhysicsPipeline::new();
 
         /* Create the bounding ball. */
-        let rigid_body = RigidBodyBuilder::dynamic().translation(vector![0.0, 0.0, 0.0]).build();
-        let collider = ColliderBuilder::ball(0.5).restitution(0.7).build();
-        let ball_body_handle = rigid_body_set.insert(rigid_body);
-        collider_set.insert_with_parent(collider, ball_body_handle, &mut rigid_body_set);
+        let ball_rigid_body = RigidBodyBuilder::dynamic()
+            .translation(vector![0.0, 0.0, 0.0])
+            .build();
+        let ball_collider = ColliderBuilder::ball(0.5).build();
+        let ball_body_handle = rigid_body_set.insert(ball_rigid_body);
+        collider_set.insert_with_parent(ball_collider, ball_body_handle, &mut rigid_body_set);
 
         /* Create other structures necessary for the simulation. */
         let gravity = vector![0.0, -9.81, 0.0];
