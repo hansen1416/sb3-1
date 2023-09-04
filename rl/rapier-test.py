@@ -1,3 +1,7 @@
-import bouncer
+from bouncer import BouncerGame
 
-bouncer.run_ball()
+bb = BouncerGame()
+
+print(dir(bb))
+print(bb.say_something())
+print(bb.get_int())

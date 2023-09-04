@@ -8,12 +8,7 @@ edition = "2021"
 name = "bouncer"
 # crate-type = ["cdylib"], the Rust compiler generates a dynamic library that is loadable at runtime. 
 # This is useful when you want to create a library that can be used by other languages, such as C or Python.
-# crate-type = ["cdylib"]
-path = "src/lib.rs"
-
-[[bin]]
-name = "bouncer"
-path = "src/main.rs"
+crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = "0.19.0"
