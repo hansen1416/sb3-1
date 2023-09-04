@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
 use rapier3d::prelude::*;
-use rapier3d::na::{ Vector3 };
+use nalgebra::{ Vector3, Unit, UnitQuaternion, Isometry3 };
+// use rapier3d::na::{ Vector3, Unit, Quaternion };
 
 /// Formats the sum of two numbers as string.
 // #[pyfunction]
@@ -146,11 +147,21 @@ impl BouncerGame {
             }
         }
 
+        // let mut rotation1 = Quaternion::new(0.707, 0.707, 0.0, 0.0);
+
+        let rotation = UnitQuaternion::from_axis_angle(
+            &Vector3::y_axis(),
+            std::f32::consts::PI / 2.0
+        );
+        let translation = Vector3::new(0.0, 10.0, 0.0);
+        let isometry = Isometry3::from_parts(translation.into(), rotation);
+
         // let quaternion = UnitQuaternion::from_euler_angles(rotation.x, rotation.y, rotation.z);
 
         let rigid_body = RigidBodyBuilder::fixed()
-            .translation(position)
-            .rotation(rotation)
+            .position(isometry)
+            // .translation(vector![0.0, 0.0, 0.0])
+            // .rotation(&rotation1)
             // All done, actually build the rigid-body.
             .build();
 

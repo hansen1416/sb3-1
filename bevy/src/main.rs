@@ -32,6 +32,15 @@ fn setup_physics(mut commands: Commands) {
         .insert(Collider::ball(0.5))
         .insert(Restitution::coefficient(0.7))
         .insert(TransformBundle::from(Transform::from_xyz(0.0, 4.0, 0.0)));
+
+    let transform = Transform::from_xyz(0.0, 0.0, -5.0).with_rotation(
+        Quat::from_axis_angle(Vec3::new(1.0, 0.0, 0.0), std::f32::consts::FRAC_PI_2)
+    );
+
+    commands
+        .spawn(RigidBody::Fixed)
+        .insert(Collider::cuboid(10.0, 10.0, 1.0))
+        .insert(TransformBundle::from(transform));
 }
 
 fn print_ball_altitude(positions: Query<&Transform, With<RigidBody>>) {
