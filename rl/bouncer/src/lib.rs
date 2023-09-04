@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 use rapier3d::prelude::*;
-// use rapier3d::na::{ Vector3 };
+use rapier3d::na::{ Vector3 };
 
 /// Formats the sum of two numbers as string.
 // #[pyfunction]
@@ -53,6 +53,15 @@ pub struct BouncerGame {
     // A ball as a rigid body handle
     ball_body_handle: RigidBodyHandle,
 
+    gravity: Vector3<f32>,
+    integration_parameters: IntegrationParameters,
+    island_manager: IslandManager,
+    broad_phase: BroadPhase,
+    narrow_phase: NarrowPhase,
+    impulse_joint_set: ImpulseJointSet,
+    multibody_joint_set: MultibodyJointSet,
+    ccd_solver: CCDSolver,
+
     my_int: usize,
 }
 
@@ -62,26 +71,83 @@ impl BouncerGame {
     pub fn new() -> Self {
         let mut rigid_body_set = RigidBodySet::new();
         let mut collider_set = ColliderSet::new();
-        let mut physics_pipeline = PhysicsPipeline::new();
 
-        let rigid_body = RigidBodyBuilder::fixed()
-            // .translation(position)
-            // .rotation(quaternion.into())
-            // All done, actually build the rigid-body.
-            .build();
-        // .rotation(rotation);
+        let physics_pipeline = PhysicsPipeline::new();
+
+        /* Create the bounding ball. */
+        let rigid_body = RigidBodyBuilder::dynamic().translation(vector![0.0, 0.0, 0.0]).build();
+        let collider = ColliderBuilder::ball(0.5).restitution(0.7).build();
         let ball_body_handle = rigid_body_set.insert(rigid_body);
+        collider_set.insert_with_parent(collider, ball_body_handle, &mut rigid_body_set);
 
-        return BouncerGame { physics_pipeline, rigid_body_set, collider_set, ball_body_handle, my_int: 1908 };
+        /* Create other structures necessary for the simulation. */
+        let gravity = vector![0.0, -9.81, 0.0];
+        let mut integration_parameters = IntegrationParameters::default();
+
+        // Change some parameters, for example the timestep length.
+        integration_parameters.dt = 1.0 / 1.0;
+
+        let island_manager = IslandManager::new();
+        let broad_phase = BroadPhase::new();
+        let narrow_phase = NarrowPhase::new();
+        let impulse_joint_set = ImpulseJointSet::new();
+        let multibody_joint_set = MultibodyJointSet::new();
+        let ccd_solver = CCDSolver::new();
+
+        return BouncerGame {
+            physics_pipeline,
+            rigid_body_set,
+            collider_set,
+            ball_body_handle,
+            gravity,
+            integration_parameters,
+            island_manager,
+            broad_phase,
+            narrow_phase,
+            impulse_joint_set,
+            multibody_joint_set,
+            ccd_solver,
+            my_int: 1908,
+        };
     }
 
-    pub fn say_something(&self) -> PyResult<()> {
-        println!(" {:?}", self.ball_body_handle);
+    fn step(&mut self) -> PyResult<[f32; 3]> {
+        let physics_hooks = ();
+        let event_handler = ();
 
-        Ok(())
+        // Execute one step of the physics simulation
+        self.physics_pipeline.step(
+            &self.gravity,
+            &self.integration_parameters,
+            &mut self.island_manager,
+            &mut self.broad_phase,
+            &mut self.narrow_phase,
+            &mut self.rigid_body_set,
+            &mut self.collider_set,
+            &mut self.impulse_joint_set,
+            &mut self.multibody_joint_set,
+            &mut self.ccd_solver,
+            None,
+            &physics_hooks,
+            &event_handler
+        );
+
+        // Get the ball's rigid body from its handle
+        let ball_rigid_body = self.rigid_body_set.get(self.ball_body_handle).unwrap();
+
+        let trans = ball_rigid_body.translation();
+
+        // Return the ball's translation (position)
+
+        Ok([trans.x, trans.y, trans.z])
     }
 
-    pub fn get_int(&self) -> PyResult<usize> {
+    #[classattr]
+    fn my_attribute() -> String {
+        "hello".to_string()
+    }
+
+    fn get_int(&self) -> PyResult<usize> {
         Ok(self.my_int)
     }
 }
@@ -91,105 +157,6 @@ fn bouncer(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<BouncerGame>()?;
     Ok(())
 }
-
-// // Implement methods for the struct
-// #[pymethods]
-// impl Physics {
-//     // A static method that creates a new Physics
-//     pub fn new() -> Physics {
-//         let mut rigid_body_set = RigidBodySet::new();
-//         let mut collider_set = ColliderSet::new();
-
-//         /* Create the ground. */
-//         let collider = ColliderBuilder::cuboid(100.0, 0.1, 100.0).build();
-//         collider_set.insert(collider);
-
-//         /* Create the bounding ball. */
-//         let rigid_body = RigidBodyBuilder::dynamic().translation(vector![0.0, 10.0, 0.0]).build();
-//         let collider = ColliderBuilder::ball(0.5).restitution(0.7).build();
-//         let ball_body_handle = rigid_body_set.insert(rigid_body);
-//         collider_set.insert_with_parent(collider, ball_body_handle, &mut rigid_body_set);
-
-//         let mut physics_pipeline = PhysicsPipeline::new();
-
-//         //         self.physics_pipeline.step(
-//         //     &self.gravity,
-//         //     &integration_parameters,
-//         //     &mut island_manager,
-//         //     &mut broad_phase,
-//         //     &mut narrow_phase,
-//         //     &mut self.rigid_body_set,
-//         //     &mut self.collider_set,
-//         //     &mut self.joint_set,
-//         //     None,
-//         //     None,
-//         //     &event_handler,
-//         // );
-
-//         // Return a new Physics with the fields initialized
-//         Physics {
-//             physics_pipeline,
-//             rigid_body_set,
-//             collider_set,
-//             ball_body_handle,
-//         }
-//     }
-
-//     // An instance method that updates the physics simulation and returns the ball's translation
-//     pub fn update(&mut self) -> [f32; 3] {
-//         /* Create other structures necessary for the simulation. */
-//         let gravity = vector![0.0, -9.81, 0.0];
-//         let integration_parameters = IntegrationParameters::default();
-
-//         let mut island_manager = IslandManager::new();
-//         let mut broad_phase = BroadPhase::new();
-//         let mut narrow_phase = NarrowPhase::new();
-//         let mut impulse_joint_set = ImpulseJointSet::new();
-//         let mut multibody_joint_set = MultibodyJointSet::new();
-//         let mut ccd_solver = CCDSolver::new();
-//         let physics_hooks = ();
-//         let event_handler = ();
-
-//         // Execute one step of the physics simulation
-//         self.physics_pipeline.step(
-//             &gravity,
-//             &integration_parameters,
-//             &mut island_manager,
-//             &mut broad_phase,
-//             &mut narrow_phase,
-//             &mut self.rigid_body_set,
-//             &mut self.collider_set,
-//             &mut impulse_joint_set,
-//             &mut multibody_joint_set,
-//             &mut ccd_solver,
-//             None,
-//             &physics_hooks,
-//             &event_handler
-//         );
-
-//         // Get the ball's rigid body from its handle
-//         let ball_rigid_body = self.rigid_body_set.get(self.ball_body_handle).unwrap();
-
-//         let trans = ball_rigid_body.translation();
-
-//         // Return the ball's translation (position)
-//         return [trans.x, trans.y, trans.z];
-//     }
-// }
-
-// #[pyfunction]
-// fn bounce_ball() -> PyResult<Physics> {
-//     // Create a new Physics using the static method
-//     let mut physics = Physics::new();
-
-//     Ok(physics)
-// }
-// #[pymodule]
-// fn bouncer(_py: Python, m: &PyModule) -> PyResult<()> {
-//     // m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-//     // m.add_function(wrap_pyfunction!(bounce_ball, m)?)?;
-//     Ok(())
-// }
 
 // #[pyfunction]
 // fn run_ball() {
