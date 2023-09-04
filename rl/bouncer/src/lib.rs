@@ -113,6 +113,66 @@ impl BouncerGame {
         };
     }
 
+    fn create_board(&mut self, side: &str) -> PyResult<()> {
+        let friction: f32 = 0.0;
+        let restitution: f32 = 1.0;
+
+        let mut position = vector![0.0, 0.0, 0.0];
+        let mut rotation = vector![0.0, 0.0, 0.0];
+
+        match side {
+            "left" => {
+                position = vector![0.0, 0.0, 0.0];
+                rotation = vector![0.0, 0.0, 0.0];
+            }
+            "right" => {
+                position = vector![0.0, 0.0, 0.0];
+                rotation = vector![0.0, 0.0, 0.0];
+            }
+            "top" => {
+                position = vector![0.0, 0.0, 0.0];
+                rotation = vector![0.0, 0.0, 0.0];
+            }
+            "bottom" => {
+                position = vector![0.0, 0.0, 0.0];
+                rotation = vector![0.0, 0.0, 0.0];
+            }
+            "back" => {
+                position = vector![0.0, 0.0, 0.0];
+                rotation = vector![0.0, 0.0, 0.0];
+            }
+            &_ => {
+                println!("Invalid side");
+            }
+        }
+
+        // let quaternion = UnitQuaternion::from_euler_angles(rotation.x, rotation.y, rotation.z);
+
+        let rigid_body = RigidBodyBuilder::fixed()
+            .translation(position)
+            .rotation(rotation)
+            // All done, actually build the rigid-body.
+            .build();
+
+        let rigid_body_handle = self.rigid_body_set.insert(rigid_body);
+
+        // The default density is 1.0, we are setting 2.0 for this example.
+        let collider = ColliderBuilder::cuboid(5.0, 5.0, 0.01)
+            .friction(friction)
+            .restitution(restitution)
+            .build();
+
+        // When the collider is attached, the rigid-body's mass and angular
+        // inertia is automatically updated to take the collider into account.
+        let _collider_handle = self.collider_set.insert_with_parent(
+            collider,
+            rigid_body_handle,
+            &mut self.rigid_body_set
+        );
+
+        Ok(())
+    }
+
     fn step(&mut self) -> PyResult<[f32; 3]> {
         let physics_hooks = ();
         let event_handler = ();
