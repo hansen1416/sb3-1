@@ -76,8 +76,7 @@ impl BouncerGame {
     }
 
     fn create_board(&mut self, side: &str) -> PyResult<()> {
-        let friction: f32 = 0.0;
-        let restitution: f32 = 1.0;
+        let size: f32 = 5.0;
 
         let mut translation = vector![0.0, 0.0, 0.0];
         let mut rotation = UnitQuaternion::from_axis_angle(
@@ -86,49 +85,45 @@ impl BouncerGame {
         );
 
         match side {
-            "left" => {
-                translation = vector![0.0, 0.0, 0.0];
-                rotation = UnitQuaternion::from_axis_angle(
-                    &Vector3::y_axis(),
-                    std::f32::consts::PI / 2.0
-                );
-            }
             "right" => {
-                translation = vector![0.0, 0.0, 0.0];
-                rotation = UnitQuaternion::from_axis_angle(
-                    &Vector3::y_axis(),
-                    std::f32::consts::PI / 2.0
-                );
-            }
-            "top" => {
-                translation = vector![0.0, 0.0, 0.0];
-                rotation = UnitQuaternion::from_axis_angle(
-                    &Vector3::y_axis(),
-                    std::f32::consts::PI / 2.0
-                );
-            }
-            "bottom" => {
-                translation = vector![0.0, 0.0, 0.0];
+                translation = vector![size / 2, 0, size / -2];
                 rotation = UnitQuaternion::from_axis_angle(
                     &Vector3::y_axis(),
                     std::f32::consts::PI / 2.0
                 );
             }
             "back" => {
-                translation = vector![0.0, 0.0, 0.0];
+                translation = vector![0.0, 0.0, -size];
+                rotation = UnitQuaternion::new(0.0, 0.0, 0.0, 1.0);
+            }
+            "left" => {
+                translation = vector![size / -2, 0, size / -2];
                 rotation = UnitQuaternion::from_axis_angle(
                     &Vector3::y_axis(),
+                    std::f32::consts::PI / -2.0
+                );
+            }
+            "top" => {
+                translation = vector![0.0, size / 2, size / -2];
+                rotation = UnitQuaternion::from_axis_angle(
+                    &Vector3::x_axis(),
+                    std::f32::consts::PI / -2.0
+                );
+            }
+            "bottom" => {
+                translation = vector![0.0, size / -2, size / -2];
+                rotation = UnitQuaternion::from_axis_angle(
+                    &Vector3::x_axis(),
                     std::f32::consts::PI / 2.0
                 );
             }
+
             &_ => {
                 println!("Invalid side");
             }
         }
 
         let isometry = Isometry3::from_parts(translation.into(), rotation);
-
-        // let quaternion = UnitQuaternion::from_euler_angles(rotation.x, rotation.y, rotation.z);
 
         let rigid_body = RigidBodyBuilder::fixed()
             .position(isometry)
@@ -139,8 +134,11 @@ impl BouncerGame {
 
         let rigid_body_handle = self.rigid_body_set.insert(rigid_body);
 
+        let friction: f32 = 0.0;
+        let restitution: f32 = 1.0;
+
         // The default density is 1.0, we are setting 2.0 for this example.
-        let collider = ColliderBuilder::cuboid(5.0, 5.0, 0.01)
+        let collider = ColliderBuilder::cuboid(size, size, 0.01)
             .friction(friction)
             .restitution(restitution)
             .build();
