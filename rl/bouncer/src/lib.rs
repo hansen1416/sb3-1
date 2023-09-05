@@ -23,26 +23,13 @@ pub struct BouncerGame {
     impulse_joint_set: ImpulseJointSet,
     multibody_joint_set: MultibodyJointSet,
     ccd_solver: CCDSolver,
-
-    my_int: usize,
 }
 
 #[pymethods]
 impl BouncerGame {
     #[new]
     pub fn new() -> Self {
-        let mut rigid_body_set = RigidBodySet::new();
-        let mut collider_set = ColliderSet::new();
-
         let physics_pipeline = PhysicsPipeline::new();
-
-        /* Create the bounding ball. */
-        let ball_rigid_body = RigidBodyBuilder::dynamic()
-            .translation(vector![0.0, 0.0, -1.0])
-            .build();
-        let ball_collider = ColliderBuilder::ball(0.5).build();
-        let ball_body_handle = rigid_body_set.insert(ball_rigid_body);
-        collider_set.insert_with_parent(ball_collider, ball_body_handle, &mut rigid_body_set);
 
         /* Create other structures necessary for the simulation. */
         let gravity = vector![0.0, -9.81, 0.0];
@@ -58,6 +45,16 @@ impl BouncerGame {
         let multibody_joint_set = MultibodyJointSet::new();
         let ccd_solver = CCDSolver::new();
 
+        let mut rigid_body_set = RigidBodySet::new();
+        let mut collider_set = ColliderSet::new();
+        let ball_body_handle = RigidBodyHandle::from_raw_parts(0, 0);
+
+        /* Create the ground. */
+        let ground_body = RigidBodyBuilder::fixed().build();
+        let ground_handle = rigid_body_set.insert(ground_body);
+        let collider = ColliderBuilder::cuboid(100.0, 0.1, 100.0).build();
+        collider_set.insert_with_parent(collider, ground_handle, &mut rigid_body_set);
+
         return BouncerGame {
             physics_pipeline,
             rigid_body_set,
@@ -71,16 +68,33 @@ impl BouncerGame {
             impulse_joint_set,
             multibody_joint_set,
             ccd_solver,
-            my_int: 1908,
         };
     }
 
     fn build_scene(&mut self) -> PyResult<()> {
-        let _ = self.create_board("right");
-        let _ = self.create_board("back");
-        let _ = self.create_board("left");
-        let _ = self.create_board("top");
-        let _ = self.create_board("bottom");
+        // let _ = self.create_board("right");
+        // let _ = self.create_board("back");
+        // let _ = self.create_board("left");
+        // let _ = self.create_board("top");
+        // let _ = self.create_board("bottom");
+
+        let _ = self.create_ball();
+
+        Ok(())
+    }
+
+    fn create_ball(&mut self) -> PyResult<()> {
+        /* Create the bounding ball. */
+        let ball_rigid_body = RigidBodyBuilder::dynamic()
+            .translation(vector![0.0, 10.0, 1.0])
+            .build();
+        let ball_collider = ColliderBuilder::ball(0.5).build();
+        self.ball_body_handle = self.rigid_body_set.insert(ball_rigid_body);
+        self.collider_set.insert_with_parent(
+            ball_collider,
+            self.ball_body_handle,
+            &mut self.rigid_body_set
+        );
 
         Ok(())
     }
@@ -198,10 +212,6 @@ impl BouncerGame {
     #[classattr]
     fn my_attribute() -> String {
         "hello".to_string()
-    }
-
-    fn get_int(&self) -> PyResult<usize> {
-        Ok(self.my_int)
     }
 }
 
